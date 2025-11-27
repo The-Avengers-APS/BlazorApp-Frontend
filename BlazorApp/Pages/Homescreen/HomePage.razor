@@ -1,29 +1,49 @@
 @page "/"
-@inject HttpClient Http
 
 <PageTitle>FitLife - Hjem</PageTitle>
 
-@if (data == null)
-{
-    <p>Indlæser...</p>
-}
-else
-{
-    <div class="homescreen-container">
-        <Greetings Streak="@data.UserStreak" />
-        <CheckIn Streak="@data.UserStreak" />
-        <Recommended TodaysPlan="@data.TodaysPlan" NextSession="@data.NextTeamSession" />
-        <LiveActivity Occupancy="@data.GymOccupancy" />
-        <QuickActions Actions="@data.QuickActions" />
-    </div>
-}
+<div class="homescreen-container">
+    <Greetings Streak="@userStreak" />
+    <CheckIn Streak="@userStreak" />
+    <Recommended TodaysPlan="@todaysPlan" NextSession="@nextSession" />
+    <LiveActivity Occupancy="@gymOccupancy" />
+    <QuickActions Actions="@quickActions" />
+</div>
 
 @code {
-    private HomescreenData? data;
-
-    protected override async Task OnInitializedAsync()
+    private UserStreak userStreak = new()
     {
-        var service = new HomescreenDataService(Http);
-        data = await service.GetDataAsync();
-    }
+        CurrentStreak = 5,
+        StreakGoal = 7,
+        LastCheckIn = DateTime.Today,
+        CheckedInToday = false
+    };
+
+    private TrainingPlan todaysPlan = new()
+    {
+        Name = "Bryst & Triceps",
+        ExerciseCount = 8,
+        DurationMinutes = 45
+    };
+
+    private TeamSession nextSession = new()
+    {
+        Name = "HIIT Cardio",
+        Time = "18:00",
+        AvailableSpots = 5
+    };
+
+    private GymOccupancy gymOccupancy = new()
+    {
+        CurrentOccupancy = 42,
+        MaxCapacity = 150
+    };
+
+    private List<QuickAction> quickActions = new()
+    {
+        new QuickAction { IconName = "ClipboardCheck", Label = "Start Træning", Href = "/trainingpage" },
+        new QuickAction { IconName = "CalendarCheck", Label = "Book Hold", Href = "/bookingpage" },
+        new QuickAction { IconName = "GraphUpArrow", Label = "Min Progress", Href = "/progresspage" },
+        new QuickAction { IconName = "ListCheck", Label = "Øvelser", Href = "/exercisespage" }
+    };
 }

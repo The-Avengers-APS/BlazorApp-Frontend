@@ -15,6 +15,9 @@
 
     <ItemGroup>
       <_ContentIncludedByDefault Remove="Pages\News\NewsPage.razor" />
+      <_ContentIncludedByDefault Remove="wwwroot\sample-data\homescreen-data.json" />
+      <_ContentIncludedByDefault Remove="wwwroot\sample-data\training-programs.json" />
+      <_ContentIncludedByDefault Remove="wwwroot\sample-data\weather.json" />
     </ItemGroup>
 
 </Project>

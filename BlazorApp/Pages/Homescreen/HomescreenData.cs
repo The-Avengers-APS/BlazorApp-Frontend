@@ -51,32 +51,3 @@ public class QuickAction
     public string Href { get; set; } = "#";
 }
 
-public class HomescreenData
-{
-    public UserStreak UserStreak { get; set; } = new();
-    public TrainingPlan TodaysPlan { get; set; } = new();
-    public TeamSession NextTeamSession { get; set; } = new();
-    public GymOccupancy GymOccupancy { get; set; } = new();
-    public List<QuickAction> QuickActions { get; set; } = new();
-}
-
-public class HomescreenDataService
-{
-    private readonly HttpClient _http;
-    private HomescreenData? _cachedData;
-
-    public HomescreenDataService(HttpClient http)
-    {
-        _http = http;
-    }
-
-    public async Task<HomescreenData> GetDataAsync()
-    {
-        if (_cachedData == null)
-        {
-            _cachedData = await _http.GetFromJsonAsync<HomescreenData>("sample-data/homescreen-data.json")
-                          ?? new HomescreenData();
-        }
-        return _cachedData;
-    }
-}
