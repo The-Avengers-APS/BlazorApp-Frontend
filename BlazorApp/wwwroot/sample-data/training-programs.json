@@ -1,0 +1,23 @@
+[
+  {
+    "title": "Begynder Styrketræning",
+    "level": "Begynder",
+    "description": "Perfekt til at komme i gang med styrketræning",
+    "duration": "4 uger",
+    "totalWorkouts": "12 træninger"
+  },
+  {
+    "title": "Avanceret Muskelopbygning",
+    "level": "Avanceret",
+    "description": "Intensivt program for maksimal muskelopbygning",
+    "duration": "8 uger",
+    "totalWorkouts": "32 træninger"
+  },
+  {
+    "title": "Konditionstræning",
+    "level": "Mellem",
+    "description": "Forbedr din kondition og udholdenhed",
+    "duration": "6 uger",
+    "totalWorkouts": "18 træninger"
+  }
+]

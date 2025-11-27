@@ -1,0 +1,44 @@
+@page "/bookingpage"
+
+<div class="container py-4">
+    <h1>Hold</h1>
+    <h5 class="text-muted mb-4">Book dine klasser</h5>
+
+    <div class="booking-cards">
+        <BookingCard
+            Title="HIIT Cardio"
+            Instructor="Sarah Hansen"
+            DateTime="I dag 18:00"
+            Duration="45 min"
+            SpotsAvailable="5/20 ledige"
+            Location="Sal 1" />
+
+        <BookingCard
+            Title="Yoga Flow"
+            Instructor="Maria Petersen"
+            DateTime="I morgen 07:00"
+            Duration="60 min"
+            SpotsAvailable="12/15 ledige"
+            Location="Sal 2" />
+
+        <BookingCard
+            Title="Spinning"
+            Instructor="Lars Nielsen"
+            DateTime="I morgen 17:30"
+            Duration="45 min"
+            SpotsAvailable="3/25 ledige"
+            Location="Sal 3" />
+
+        <BookingCard
+            Title="CrossFit"
+            Instructor="Thomas Andersen"
+            DateTime="Onsdag 19:00"
+            Duration="60 min"
+            SpotsAvailable="8/15 ledige"
+            Location="Sal 1" />
+    </div>
+</div>
+
+@code {
+
+}

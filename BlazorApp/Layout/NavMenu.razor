@@ -1,0 +1,70 @@
+@using BlazorBootstrap
+
+<div class="offcanvas-container">
+    <Offcanvas @ref="offcanvas" Title="User Menu" Placement="Placement.End">
+        <BodyTemplate>
+            <nav class="nav flex-column">
+                <NavLink class="nav-link" href="/profile">
+                    <Icon Name="IconName.PersonFill" /> Profile
+                </NavLink>
+                <NavLink class="nav-link" href="/settings">
+                    <Icon Name="IconName.GearFill" /> Settings
+                </NavLink>
+                <NavLink class="nav-link" href="/logout">
+                    <Icon Name="IconName.BoxArrowRight" /> Log out
+                </NavLink>
+            </nav>
+        </BodyTemplate>
+    </Offcanvas>
+</div>
+
+<div class="top-nav">
+    <div class="top-nav-content">
+        <span class="app-title">FitLife</span>
+        <Button Color="ButtonColor.Link" Class="user-icon-btn" @onclick="ShowOffcanvasAsync">
+            <Icon Name="IconName.PersonCircle" Size="IconSize.x5" />
+        </Button>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <NavLink class="bottom-nav-item" href="/" Match="NavLinkMatch.All">
+        <div class="nav-icon">
+            <Icon Name="IconName.HouseFill" Size="IconSize.x4" />
+        </div>
+        <span>Hjem</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="/trainingpage">
+        <div class="nav-icon">
+            <Icon Name="IconName.Activity" Size="IconSize.x4" />
+        </div>
+        <span>Træning</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="/exercisespage">
+        <div class="nav-icon">
+            <Icon Name="IconName.ListCheck" Size="IconSize.x4" />
+        </div>
+        <span>Øvelser</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="/bookingpage">
+        <div class="nav-icon">
+            <Icon Name="IconName.PeopleFill" Size="IconSize.x4" />
+        </div>
+        <span>Hold</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="/progresspage">
+        <div class="nav-icon">
+            <Icon Name="IconName.GraphUpArrow" Size="IconSize.x4" />
+        </div>
+        <span>Progress</span>
+    </NavLink>
+</div>
+
+@code {
+    private Offcanvas offcanvas = default!;
+
+    private async Task ShowOffcanvasAsync()
+    {
+        await offcanvas.ShowAsync();
+    }
+}

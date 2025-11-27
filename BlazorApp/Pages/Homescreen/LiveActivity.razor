@@ -1,0 +1,45 @@
+<Card Class="live-activity-card">
+    <CardBody>
+        <div class="activity-header">
+            <small class="text-muted">Lige nu i centret</small>
+            <Badge Color="@GetBadgeColor()">@Occupancy.StatusText</Badge>
+        </div>
+
+        <div class="activity-count">
+            <h3>@Occupancy.CurrentOccupancy Personer</h3>
+        </div>
+
+        <Progress Height="12" Class="occupancy-progress">
+            <ProgressBar Color="@GetProgressColor()"
+                         Width="@OccupancyPercentage" />
+        </Progress>
+
+        <div class="activity-footer">
+            <small class="capacity-text">Kapacitet: @Occupancy.MaxCapacity</small>
+        </div>
+    </CardBody>
+</Card>
+
+@code {
+    [Parameter]
+    public GymOccupancy Occupancy { get; set; } = new();
+
+    private double OccupancyPercentage =>
+        (double)Occupancy.CurrentOccupancy / Occupancy.MaxCapacity * 100;
+
+    private BadgeColor GetBadgeColor() => Occupancy.StatusColor switch
+    {
+        "success" => BadgeColor.Success,
+        "warning" => BadgeColor.Warning,
+        "danger" => BadgeColor.Danger,
+        _ => BadgeColor.Secondary
+    };
+
+    private ProgressColor GetProgressColor() => Occupancy.StatusColor switch
+    {
+        "success" => ProgressColor.Success,
+        "warning" => ProgressColor.Warning,
+        "danger" => ProgressColor.Danger,
+        _ => ProgressColor.Secondary
+    };
+}

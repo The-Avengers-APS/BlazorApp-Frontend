@@ -1,0 +1,48 @@
+<Card Class="mb-3">
+    <CardBody>
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h5 class="card-title mb-1">@Title</h5>
+                <p class="text-muted mb-0">@Instructor</p>
+            </div>
+            <Badge Color="BadgeColor.Primary">@DateTime</Badge>
+        </div>
+        <div class="d-flex gap-3 mb-3 text-muted">
+            <small>
+                <Icon Name="IconName.Clock" Size="IconSize.x4" /> @Duration
+            </small>
+            <small>
+                <Icon Name="IconName.PeopleFill" Size="IconSize.x4" /> @SpotsAvailable
+            </small>
+            <small>
+                <Icon Name="IconName.GeoAlt" Size="IconSize.x4" /> @Location
+            </small>
+        </div>
+        <Button Color="ButtonColor.Primary" Class="w-100" @onclick="BookClass">Book Hold</Button>
+    </CardBody>
+</Card>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Instructor { get; set; } = string.Empty;
+
+    [Parameter]
+    public string DateTime { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Duration { get; set; } = string.Empty;
+
+    [Parameter]
+    public string SpotsAvailable { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Location { get; set; } = string.Empty;
+
+    private void BookClass()
+    {
+        // TODO: Implement booking logic
+    }
+}

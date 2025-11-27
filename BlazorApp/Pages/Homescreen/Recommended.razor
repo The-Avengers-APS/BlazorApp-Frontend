@@ -1,0 +1,46 @@
+<div class="recommended-container">
+    <Card Class="recommended-card training-card">
+        <CardBody>
+            <div class="card-header-small">
+                <Icon Name="IconName.ClipboardCheck" Color="IconColor.Primary" />
+                <span class="card-label">I dags plan</span>
+            </div>
+            <h5 class="plan-name">@TodaysPlan.Name</h5>
+            <div class="plan-details">
+                <Badge Color="BadgeColor.Light">
+                    @TodaysPlan.ExerciseCount øvelser
+                </Badge>
+                <Badge Color="BadgeColor.Light">
+                    @TodaysPlan.DurationMinutes min
+                </Badge>
+            </div>
+        </CardBody>
+    </Card>
+
+    <Card Class="recommended-card team-card">
+        <CardBody>
+            <div class="card-header-small">
+                <Icon Name="IconName.PeopleFill" Color="IconColor.Success" />
+                <span class="card-label">Næste hold</span>
+            </div>
+            <h5 class="session-name">@NextSession.Name</h5>
+            <div class="session-details">
+                <div class="session-time">
+                    <Icon Name="IconName.Clock" Size="IconSize.x4" />
+                    <span>@NextSession.Time</span>
+                </div>
+                <Badge Color="BadgeColor.Success">
+                    @NextSession.AvailableSpots pladser
+                </Badge>
+            </div>
+        </CardBody>
+    </Card>
+</div>
+
+@code {
+    [Parameter]
+    public TrainingPlan TodaysPlan { get; set; } = new();
+
+    [Parameter]
+    public TeamSession NextSession { get; set; } = new();
+}

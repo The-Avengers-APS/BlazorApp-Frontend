@@ -1,0 +1,29 @@
+@page "/"
+@inject HttpClient Http
+
+<PageTitle>FitLife - Hjem</PageTitle>
+
+@if (data == null)
+{
+    <p>Indlæser...</p>
+}
+else
+{
+    <div class="homescreen-container">
+        <Greetings Streak="@data.UserStreak" />
+        <CheckIn Streak="@data.UserStreak" />
+        <Recommended TodaysPlan="@data.TodaysPlan" NextSession="@data.NextTeamSession" />
+        <LiveActivity Occupancy="@data.GymOccupancy" />
+        <QuickActions Actions="@data.QuickActions" />
+    </div>
+}
+
+@code {
+    private HomescreenData? data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var service = new HomescreenDataService(Http);
+        data = await service.GetDataAsync();
+    }
+}

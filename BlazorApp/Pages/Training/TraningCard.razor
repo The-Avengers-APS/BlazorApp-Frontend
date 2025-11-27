@@ -1,0 +1,45 @@
+<Card Class="mb-3">
+    <CardBody>
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <h5 class="card-title mb-0">@Title</h5>
+            <Badge Color="@GetBadgeColor()">@Level</Badge>
+        </div>
+        <p class="card-text text-muted mb-3">@Description</p>
+        <div class="d-flex gap-2">
+            <Badge Color="BadgeColor.Light">
+                <Icon Name="IconName.Calendar" Size="IconSize.x4" /> @Duration
+            </Badge>
+            <Badge Color="BadgeColor.Light">
+                <Icon Name="IconName.Trophy" Size="IconSize.x4" /> @TotalWorkouts
+            </Badge>
+        </div>
+    </CardBody>
+</Card>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Level { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Description { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Duration { get; set; } = string.Empty;
+
+    [Parameter]
+    public string TotalWorkouts { get; set; } = string.Empty;
+
+    private BadgeColor GetBadgeColor()
+    {
+        return Level switch
+        {
+            "Begynder" => BadgeColor.Success,
+            "Mellem" => BadgeColor.Warning,
+            "Avanceret" => BadgeColor.Danger,
+            _ => BadgeColor.Secondary
+        };
+    }
+}
