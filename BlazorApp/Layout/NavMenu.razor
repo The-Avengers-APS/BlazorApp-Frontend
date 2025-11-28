@@ -18,47 +18,49 @@
     </Offcanvas>
 </div>
 
-<div class="top-nav">
-    <div class="top-nav-content">
-        <span class="app-title">FitLife</span>
-        <Button Color="ButtonColor.Link" Class="user-icon-btn" @onclick="ShowOffcanvasAsync">
+<nav class="navbar navbar-light bg-light shadow-sm">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <span class="navbar-brand mb-0 h1">FitLife</span>
+        <Button Color="ButtonColor.Link" Class="btn btn-outline-secondary" @onclick="ShowOffcanvasAsync">
             <Icon Name="IconName.PersonCircle" Size="IconSize.x5" />
         </Button>
     </div>
-</div>
+</nav>
 
-<div class="bottom-nav">
-    <NavLink class="bottom-nav-item" href="/" Match="NavLinkMatch.All">
-        <div class="nav-icon">
-            <Icon Name="IconName.HouseFill" Size="IconSize.x4" />
-        </div>
-        <span>Hjem</span>
-    </NavLink>
-    <NavLink class="bottom-nav-item" href="/trainingpage">
-        <div class="nav-icon">
-            <Icon Name="IconName.Activity" Size="IconSize.x4" />
-        </div>
-        <span>Træning</span>
-    </NavLink>
-    <NavLink class="bottom-nav-item" href="/exercisespage">
-        <div class="nav-icon">
-            <Icon Name="IconName.ListCheck" Size="IconSize.x4" />
-        </div>
-        <span>Øvelser</span>
-    </NavLink>
-    <NavLink class="bottom-nav-item" href="/bookingpage">
-        <div class="nav-icon">
-            <Icon Name="IconName.PeopleFill" Size="IconSize.x4" />
-        </div>
-        <span>Hold</span>
-    </NavLink>
-    <NavLink class="bottom-nav-item" href="/progresspage">
-        <div class="nav-icon">
-            <Icon Name="IconName.GraphUpArrow" Size="IconSize.x4" />
-        </div>
-        <span>Progress</span>
-    </NavLink>
-</div>
+<nav class="navbar fixed-bottom bg-white border-top shadow-sm">
+    <div class="container-fluid d-flex justify-content-around">
+        <NavLink class="nav-item nav-link text-center" href="/" Match="NavLinkMatch.All">
+            <div>
+                <Icon Name="IconName.HouseFill" Size="IconSize.x4" />
+            </div>
+            <small>Hjem</small>
+        </NavLink>
+        <NavLink class="nav-item nav-link text-center" href="/trainingpage">
+            <div>
+                <Icon Name="IconName.Activity" Size="IconSize.x4" />
+            </div>
+            <small>Træning</small>
+        </NavLink>
+        <NavLink class="nav-item nav-link text-center" href="/exercisespage">
+            <div>
+                <Icon Name="IconName.ListCheck" Size="IconSize.x4" />
+            </div>
+            <small>Øvelser</small>
+        </NavLink>
+        <NavLink class="nav-item nav-link text-center" href="/bookingpage">
+            <div>
+                <Icon Name="IconName.PeopleFill" Size="IconSize.x4" />
+            </div>
+            <small>Hold</small>
+        </NavLink>
+        <NavLink class="nav-item nav-link text-center" href="/progresspage">
+            <div>
+                <Icon Name="IconName.GraphUpArrow" Size="IconSize.x4" />
+            </div>
+            <small>Progress</small>
+        </NavLink>
+    </div>
+</nav>
 
 @code {
     private Offcanvas offcanvas = default!;
