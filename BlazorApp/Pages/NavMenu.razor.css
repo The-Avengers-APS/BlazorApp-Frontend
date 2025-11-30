@@ -13,7 +13,7 @@
 
 .navbar-nav .nav-link {
     color: #333;
-    text-decoration: none;
+    text-decoration: none !important;
     padding: 0.5rem 1rem;
     transition: color 0.3s ease, background-color 0.3s ease;
 }
@@ -22,7 +22,7 @@
 .navbar-nav .nav-link:focus {
     color: #0056b3;
     background-color: #f8f9fa;
-    text-decoration: none;
+    text-decoration: none !important;
 }
 
 .navbar-nav .nav-item.active .nav-link {
