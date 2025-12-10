@@ -1,10 +1,27 @@
+/* ------------------------------------------------------ */
+/* PREMIUM TOP NAV (OPGRADERET)                           */
+/* ------------------------------------------------------ */
+
 .top-nav {
     position: sticky;
     top: 0;
-    background: linear-gradient(135deg, #888787 0%, #323232FF 100%);
-    padding: 15px 20px;
-    z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1200;
+    padding: 25px 40px;
+
+    /* Premium glass */
+    background: white ;
+    backdrop-filter: blur(18px) saturate(180%);
+
+    /* Elegant iOS edge */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    /* Depth */
+    box-shadow:
+            0 6px 20px rgba(0, 0, 0, 0.25),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+
+    transition: all 0.25s ease;
+    border-radius: 20px;
 }
 
 .top-nav-content {
@@ -14,20 +31,45 @@
 }
 
 .app-title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: white;
+    font-size: 1.50rem;
+    font-weight: 100;
+    letter-spacing: 4px;
+
+    /* Luxury metallic gradient */
+    background: black;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.08);
+}
+
+.avatar-square {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 0.95rem;
+    font-weight: 700;
     letter-spacing: 0.5px;
-}
 
-.user-icon-btn {
-    padding: 0;
+    border-radius: 12px; /* Rounded square */
     color: white;
+    text-decoration: none !important;
 }
 
-.user-icon-btn:hover {
-    color: rgba(255, 255, 255, 0.8);
+/* Ensures stat-icon-primary keeps its gradient */
+.stat-icon-primary {
+    background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%);
 }
+
+
+/* ------------------------------------------------------ */
+/* BOTTOM NAV (DIN ORIGINALE)                             */
+/* ------------------------------------------------------ */
 
 .bottom-nav {
     position: absolute;
@@ -35,13 +77,14 @@
     left: 0;
     right: 0;
     width: 100%;
-    background: white;
-    border-top: 1px solid #e0e0e0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
     display: flex;
     justify-content: space-around;
-    padding: 8px 0;
+    padding: 8px 0 12px;
     z-index: 1000;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.08);
 }
 
 .bottom-nav-item {
@@ -49,45 +92,55 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-decoration: none;
-    color: #8e8e93;
-    padding: 4px 8px;
-    transition: color 0.2s ease;
+    text-decoration: none !important;
+    color: #6c757d;
+    padding: 8px 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 60px;
     flex: 1;
+    position: relative;
+    border-radius: 16px;
+}
+
+.bottom-nav-item:hover {
+    text-decoration: none !important;
+    background-color: rgba(0, 122, 255, 0.08);
+    color: #6c757d;
 }
 
 .bottom-nav-item .nav-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 2px;
+    margin-bottom: 6px;
     width: 100%;
+    transition: transform 0.3s ease;
 }
 
 .bottom-nav-item .nav-icon ::deep svg,
 .bottom-nav-item .nav-icon ::deep i {
-    color: #8e8e93;
-    transition: color 0.2s ease;
+    color: #6c757d;
+    transition: all 0.3s ease;
 }
 
 .bottom-nav-item span {
     font-size: 0.625rem;
-    font-weight: 500;
-    color: #8e8e93;
-    transition: color 0.2s ease;
+    font-weight: 600;
+    color: #6c757d;
+    transition: all 0.3s ease;
     display: block;
     width: 100%;
     text-align: center;
-}
-
-.bottom-nav-item:hover {
-    color: #8e8e93;
-    background-color: transparent;
+    text-decoration: none !important;
 }
 
 .bottom-nav-item.active {
     color: #007AFF;
+    text-decoration: none !important;
+}
+
+.bottom-nav-item.active .nav-icon {
+    transform: scale(1.1);
 }
 
 .bottom-nav-item.active .nav-icon ::deep svg,
@@ -97,47 +150,27 @@
 
 .bottom-nav-item.active span {
     color: #007AFF;
+    font-weight: 700;
+    text-decoration: none !important;
+}
+
+.bottom-nav-item.active::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #007AFF, transparent);
+    border-radius: 0 0 3px 3px;
 }
 
 @media (max-width: 768px) {
     .bottom-nav {
         max-width: 100%;
         border-radius: 0;
-    }
-}
-
-.offcanvas-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    pointer-events: none;
-    z-index: 1050;
-}
-
-.offcanvas-container ::deep .offcanvas,
-.offcanvas-container ::deep .offcanvas-backdrop {
-    pointer-events: auto;
-}
-
-/* Constrain Offcanvas to mobile screen on desktop */
-@media (min-width: 769px) {
-    .offcanvas-container ::deep .offcanvas {
-        position: absolute !important;
-        height: 100% !important;
-        top: 0 !important;
-        border-radius: 0 40px 40px 0;
-    }
-
-    .offcanvas-container ::deep .offcanvas-backdrop {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        border-radius: 40px;
+        left: 0;
+        transform: none;
     }
 }

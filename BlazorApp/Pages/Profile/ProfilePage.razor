@@ -1,83 +1,100 @@
 @page "/profile"
+@using BlazorBootstrap  
 
-<div class="container py-4">
-    <h3>Min Profil</h3>
-    <h4 class="text-muted mb-4">Velkommen tilbage, @userName</h4>
-
-    <!-- Profile Header Card -->
-    <div class="card mb-4">
-        <div class="card-body text-center">
-            <div class="mb-3">
-                <Icon Name="IconName.PersonCircle" Size="IconSize.x5" Color="IconColor.Primary" />
-            </div>
-            <h4 class="mb-1">@userName</h4>
-            <p class="text-muted mb-2">@userEmail</p>
-            <Badge Color="BadgeColor.Success">@membershipType</Badge>
-            <p class="text-muted mt-2 mb-0">
-                <small>Medlem siden @memberSince</small>
-            </p>
+<div class="profile-container">
+    <div class="container py-4">
+        <!-- Profile Header -->
+        <div class="profile-header mb-4">
+            <h2 class="profile-title">Min Profil</h2>
+            <p class="profile-subtitle">Velkommen tilbage, @userName</p>
         </div>
-    </div>
 
-    <!-- Stats Card -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title mb-3">Min Statistik</h5>
-            <div class="row g-3">
-                <div class="col-6 col-md-3">
-                    <div class="stat-item text-center p-3 border rounded">
-                        <Icon Name="IconName.Fire" Color="IconColor.Warning" Size="IconSize.x2" />
-                        <h3 class="mt-2 mb-0">@totalWorkouts</h3>
-                        <small class="text-muted">Træninger</small>
-                    </div>
+        <!-- Profile Card -->
+        <div class="profile-card mb-4">
+            <div class="profile-card-content">
+                <div class="profile-avatar">
+                    <Icon Name="IconName.PersonCircle" Size="IconSize.x5" />
                 </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-item text-center p-3 border rounded">
-                        <Icon Name="IconName.CalendarCheck" Color="IconColor.Success" Size="IconSize.x2" />
-                        <h3 class="mt-2 mb-0">@currentStreak</h3>
-                        <small class="text-muted">Dage Streak</small>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-item text-center p-3 border rounded">
-                        <Icon Name="IconName.ClockHistory" Color="IconColor.Primary" Size="IconSize.x2" />
-                        <h3 class="mt-2 mb-0">@totalHours</h3>
-                        <small class="text-muted">Timer Total</small>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-item text-center p-3 border rounded">
-                        <Icon Name="IconName.TrophyFill" Color="IconColor.Danger" Size="IconSize.x2" />
-                        <h3 class="mt-2 mb-0">@achievements</h3>
-                        <small class="text-muted">Præstationer</small>
-                    </div>
-                </div>
+                <h3 class="profile-name">@userName</h3>
+                <p class="profile-email">@userEmail</p>
+                <span class="membership-badge">@membershipType</span>
+                <p class="member-since">Medlem siden @memberSince</p>
             </div>
         </div>
-    </div>
 
-    <!-- Settings Card -->
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title mb-3">Konto Indstillinger</h5>
-            <div class="list-group list-group-flush">
-                <a href="#" class="list-group-item list-group-item-action">
-                    <Icon Name="IconName.PersonFill" />
-                    <span class="ms-2">Rediger Profil</span>
+        <!-- Stats Grid -->
+        <div class="stats-grid mb-4">
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-warning">
+                    <Icon Name="IconName.Fire" Size="IconSize.x3" />
+                </div>
+                <h3 class="stat-value">@totalWorkouts</h3>
+                <p class="stat-label">Træninger</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-success">
+                    <Icon Name="IconName.CalendarCheck" Size="IconSize.x3" />
+                </div>
+                <h3 class="stat-value">@currentStreak</h3>
+                <p class="stat-label">Dage Streak</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-primary">
+                    <Icon Name="IconName.ClockHistory" Size="IconSize.x3" />
+                </div>
+                <h3 class="stat-value">@totalHours</h3>
+                <p class="stat-label">Timer Total</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-danger">
+                    <Icon Name="IconName.TrophyFill" Size="IconSize.x3" />
+                </div>
+                <h3 class="stat-value">@achievements</h3>
+                <p class="stat-label">Præstationer</p>
+            </div>
+        </div>
+
+        <!-- Settings Card -->
+        <div class="settings-card">
+            <h4 class="settings-title">Konto Indstillinger</h4>
+            <div class="settings-list">
+                <a href="#" class="settings-item">
+                    <div class="settings-item-icon">
+                        <Icon Name="IconName.PersonFill" />
+                    </div>
+                    <span class="settings-item-text">Rediger Profil</span>
+                    <Icon Name="IconName.ChevronRight" />
                 </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <Icon Name="IconName.Lock" />
-                    <span class="ms-2">Skift Adgangskode</span>
+                <a href="#" class="settings-item">
+                    <div class="settings-item-icon">
+                        <Icon Name="IconName.Lock" />
+                    </div>
+                    <span class="settings-item-text">Skift Adgangskode</span>
+                    <Icon Name="IconName.ChevronRight" />
                 </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <Icon Name="IconName.Bell" />
-                    <span class="ms-2">Notifikationer</span>
+                <a href="#" class="settings-item">
+                    <div class="settings-item-icon">
+                        <Icon Name="IconName.Bell" />
+                    </div>
+                    <span class="settings-item-text">Notifikationer</span>
+                    <Icon Name="IconName.ChevronRight" />
                 </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <Icon Name="IconName.CreditCard" />
-                    <span class="ms-2">Abonnement</span>
+                <a href="#" class="settings-item">
+                    <div class="settings-item-icon">
+                        <Icon Name="IconName.CreditCard" />
+                    </div>
+                    <span class="settings-item-text">Abonnement</span>
+                    <Icon Name="IconName.ChevronRight" />
                 </a>
             </div>
+        </div>
+
+        <!-- Logout Button -->
+        <div class="logout-section">
+            <button class="btn-logout" @onclick="Logout">
+                <Icon Name="IconName.BoxArrowRight" />
+                <span>Log ud</span>
+            </button>
         </div>
     </div>
 </div>
@@ -92,4 +109,9 @@
     private int currentStreak = 5;
     private int totalHours = 84;
     private int achievements = 12;
+
+    private void Logout()
+    {
+        // Implement logout logic
+    }
 }

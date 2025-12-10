@@ -1,0 +1,9 @@
+@page "/training/{Slug}"
+
+    <h3>@Slug</h3>
+
+    <p>Her kommer øvelser, progression osv…</p>
+
+    @code {
+    [Parameter] public string Slug { get; set; }
+}

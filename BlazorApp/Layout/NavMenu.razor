@@ -1,31 +1,17 @@
 @using BlazorBootstrap
 
-<div class="offcanvas-container">
-    <Offcanvas @ref="offcanvas" Title="User Menu" Placement="Placement.End">
-        <BodyTemplate>
-            <nav class="nav flex-column">
-                <NavLink class="nav-link" href="/profile">
-                    <Icon Name="IconName.PersonFill" /> Profile
-                </NavLink>
-                <NavLink class="nav-link" href="/settings">
-                    <Icon Name="IconName.GearFill" /> Settings
-                </NavLink>
-                <NavLink class="nav-link" href="/logout">
-                    <Icon Name="IconName.BoxArrowRight" /> Log out
-                </NavLink>
-            </nav>
-        </BodyTemplate>
-    </Offcanvas>
-</div>
-
 <div class="top-nav">
     <div class="top-nav-content">
         <span class="app-title">FitLife</span>
-        <Button Color="ButtonColor.Link" Class="user-icon-btn" @onclick="ShowOffcanvasAsync">
-            <Icon Name="IconName.PersonCircle" Size="IconSize.x5" />
-        </Button>
+        
+        <NavLink href="/profile" class="stat-icon stat-icon-primary avatar-square">
+            MN
+        </NavLink>
     </div>
 </div>
+
+
+
 
 <div class="bottom-nav">
     <NavLink class="bottom-nav-item" href="/" Match="NavLinkMatch.All">
@@ -59,12 +45,3 @@
         <span>Progress</span>
     </NavLink>
 </div>
-
-@code {
-    private Offcanvas offcanvas = default!;
-
-    private async Task ShowOffcanvasAsync()
-    {
-        await offcanvas.ShowAsync();
-    }
-}
