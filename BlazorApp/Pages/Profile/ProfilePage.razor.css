@@ -1,0 +1,232 @@
+.profile-container {
+    min-height: 100vh;
+    padding-bottom: 100px;
+}
+
+.profile-header {
+    text-align: left;
+    margin-bottom: 24px;
+}
+
+.profile-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.profile-subtitle {
+    font-size: 1.125rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.profile-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.profile-card-content {
+    padding: 40px 24px;
+    text-align: center;
+}
+
+.profile-avatar {
+    margin-bottom: 20px;
+    color: #007AFF;
+}
+
+.profile-name {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.profile-email {
+    color: #6c757d;
+    font-size: 1rem;
+    margin-bottom: 16px;
+}
+
+.membership-badge {
+    display: inline-block;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.member-since {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Always 2 columns */
+    gap: 16px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px 16px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    color: white;
+}
+
+.stat-icon-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.stat-icon-primary {
+    background: linear-gradient(135deg, #007AFF 0%, #0056b3 100%);
+    color: white;
+}
+
+.stat-icon-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.settings-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.settings-title {
+    padding: 24px 24px 16px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.settings-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-item {
+    display: flex;
+    align-items: center;
+    padding: 20px 24px;
+    text-decoration: none;
+    color: #1a1a1a;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.settings-item:last-child {
+    border-bottom: none;
+}
+
+.settings-item:hover {
+    background: rgba(0, 122, 255, 0.05);
+}
+
+.settings-item:active {
+    background: rgba(0, 122, 255, 0.1);
+}
+
+.settings-item-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    color: #007AFF;
+}
+
+.settings-item-text {
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.logout-section {
+    margin-top: 24px;
+}
+
+.btn-logout {
+    width: 100%;
+    padding: 16px;
+    background: white;
+    border: 2px solid #dc3545;
+    border-radius: 12px;
+    color: #dc3545;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-logout:hover {
+    background: #dc3545;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-logout:active {
+    transform: translateY(0);
+}
