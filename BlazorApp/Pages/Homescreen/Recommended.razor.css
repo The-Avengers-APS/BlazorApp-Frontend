@@ -1,0 +1,43 @@
+.recommended-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.recommended-card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-header-small {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.card-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.plan-name, .session-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 8px 0;
+}
+
+.plan-details, .session-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.session-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}

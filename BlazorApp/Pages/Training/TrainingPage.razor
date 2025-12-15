@@ -1,0 +1,34 @@
+@page "/trainingpage"
+@attribute [Authorize]
+
+<div class="container py-4">
+    <h3>Træningsprogrammer</h3>
+    <h4 class="text-muted mb-4">Vælg dit næste program</h4>
+
+    <div class="training-cards">
+        <TraningCard
+            Title="Begynder Styrketræning"
+            Level="Begynder"
+            Description="Perfekt til at komme i gang med styrketræning"
+            Duration="4 uger"
+            TotalWorkouts="12 træninger" />
+
+        <TraningCard
+            Title="Avanceret Muskelopbygning"
+            Level="Avanceret"
+            Description="Intensivt program for maksimal muskelopbygning"
+            Duration="8 uger"
+            TotalWorkouts="32 træninger" />
+
+        <TraningCard
+            Title="Konditionstræning"
+            Level="Mellem"
+            Description="Forbedr din kondition og udholdenhed"
+            Duration="6 uger"
+            TotalWorkouts="18 træninger" />
+    </div>
+</div>
+
+@code {
+
+}

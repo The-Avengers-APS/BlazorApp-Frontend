@@ -1,0 +1,123 @@
+@page "/login"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>FitLife - Log ind</PageTitle>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <h2 class="auth-title">Log ind</h2>
+
+        <EditForm Model="@_loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <InputText id="email" @bind-Value="_loginModel.Email"
+                           class="form-control" placeholder="Indtast email" />
+                <ValidationMessage For="@(() => _loginModel.Email)" class="text-danger" />
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Adgangskode</label>
+                <InputText id="password" type="password" @bind-Value="_loginModel.Password"
+                           class="form-control" placeholder="Indtast adgangskode" />
+                <ValidationMessage For="@(() => _loginModel.Password)" class="text-danger" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger">@_errorMessage</div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100" disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <span>Logger ind...</span>
+                }
+                else
+                {
+                    <span>Log ind</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="auth-links mt-3 text-center">
+            <p>Har du ikke en konto? <a href="/register">Opret konto</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .auth-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .auth-title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #333;
+    }
+
+    .auth-links a {
+        color: #667eea;
+        text-decoration: none;
+    }
+
+    .auth-links a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+@code {
+    private LoginRequest _loginModel = new();
+    private string? _errorMessage;
+    private bool _isLoading;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private async Task HandleLogin()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var result = await AuthService.LoginAsync(_loginModel.Email, _loginModel.Password);
+
+            if (result.Success)
+            {
+                var returnUrl = string.IsNullOrEmpty(ReturnUrl) ? "/" : ReturnUrl;
+                Navigation.NavigateTo(returnUrl);
+            }
+            else
+            {
+                _errorMessage = result.ErrorMessage ?? "Login mislykkedes";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"En fejl opstod: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

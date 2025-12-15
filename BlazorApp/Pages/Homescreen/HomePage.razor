@@ -1,0 +1,50 @@
+@page "/"
+@attribute [Authorize]
+
+<PageTitle>FitLife - Hjem</PageTitle>
+
+<div class="homescreen-container">
+    <Greetings Streak="@userStreak" />
+    <CheckIn Streak="@userStreak" />
+    <Recommended TodaysPlan="@todaysPlan" NextSession="@nextSession" />
+    <LiveActivity Occupancy="@gymOccupancy" />
+    <QuickActions Actions="@quickActions" />
+</div>
+
+@code {
+    private UserStreak userStreak = new()
+    {
+        CurrentStreak = 5,
+        StreakGoal = 7,
+        LastCheckIn = DateTime.Today,
+        CheckedInToday = false
+    };
+
+    private TrainingPlan todaysPlan = new()
+    {
+        Name = "Bryst & Triceps",
+        ExerciseCount = 8,
+        DurationMinutes = 45
+    };
+
+    private TeamSession nextSession = new()
+    {
+        Name = "HIIT Cardio",
+        Time = "18:00",
+        AvailableSpots = 5
+    };
+
+    private GymOccupancy gymOccupancy = new()
+    {
+        CurrentOccupancy = 42,
+        MaxCapacity = 150
+    };
+
+    private List<QuickAction> quickActions = new()
+    {
+        new QuickAction { IconName = "ClipboardCheck", Label = "Start Træning", Href = "/trainingpage" },
+        new QuickAction { IconName = "CalendarCheck", Label = "Book Hold", Href = "/bookingpage" },
+        new QuickAction { IconName = "GraphUpArrow", Label = "Min Progress", Href = "/progresspage" },
+        new QuickAction { IconName = "ListCheck", Label = "Øvelser", Href = "/exercisespage" }
+    };
+}

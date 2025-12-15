@@ -1,0 +1,26 @@
+﻿@inherits LayoutComponentBase
+@using BlazorApp.Services.Auth
+@inject TokenRefreshService TokenRefreshService
+@implements IDisposable
+
+<div class="mobile-container">
+    <div class="mobile-screen">
+        <NavMenu/>
+
+        <main class="mobile-main">
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        TokenRefreshService.ScheduleRefresh();
+    }
+
+    public void Dispose()
+    {
+        TokenRefreshService.Dispose();
+    }
+}

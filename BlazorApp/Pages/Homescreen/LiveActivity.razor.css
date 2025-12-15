@@ -1,0 +1,29 @@
+.live-activity-card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.activity-count h3 {
+    margin: 8px 0 16px 0;
+    font-weight: 600;
+}
+
+.occupancy-progress {
+    margin-bottom: 8px;
+}
+
+.activity-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.capacity-text {
+    color: #6c757d;
+}

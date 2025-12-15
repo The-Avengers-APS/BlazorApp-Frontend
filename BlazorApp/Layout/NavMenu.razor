@@ -1,0 +1,108 @@
+@using BlazorBootstrap
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="offcanvas-container">
+    <Offcanvas @ref="offcanvas" Title="Bruger Menu" Placement="Placement.End">
+        <BodyTemplate>
+            <AuthorizeView>
+                <Authorized>
+                    <div class="user-info-section mb-3 p-2 bg-light rounded">
+                        <div class="d-flex align-items-center gap-2">
+                            <Icon Name="IconName.PersonCircle" Size="IconSize.x3" />
+                            <div>
+                                <div class="fw-bold">@context.User.Identity?.Name</div>
+                                <RoleBadge Role="@GetUserRole(context.User)" />
+                            </div>
+                        </div>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+            <nav class="nav flex-column">
+                <NavLink class="nav-link" href="/profile">
+                    <Icon Name="IconName.PersonFill" /> Profil
+                </NavLink>
+                <AuthorizeView Roles="Admin,Manager">
+                    <NavLink class="nav-link" href="/admin">
+                        <Icon Name="IconName.GearFill" /> Administration
+                    </NavLink>
+                </AuthorizeView>
+                <AuthorizeView Roles="Admin,Manager,Trainer">
+                    <NavLink class="nav-link" href="/members">
+                        <Icon Name="IconName.PeopleFill" /> Medlemmer
+                    </NavLink>
+                </AuthorizeView>
+                <button class="nav-link btn btn-link text-start" @onclick="HandleLogout">
+                    <Icon Name="IconName.BoxArrowRight" /> Log ud
+                </button>
+            </nav>
+        </BodyTemplate>
+    </Offcanvas>
+</div>
+
+<div class="top-nav">
+    <div class="top-nav-content">
+        <span class="app-title">FitLife</span>
+        <Button Color="ButtonColor.Link" Class="user-icon-btn" @onclick="ShowOffcanvasAsync">
+            <Icon Name="IconName.PersonCircle" Size="IconSize.x5" />
+        </Button>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <NavLink class="bottom-nav-item" href="/" Match="NavLinkMatch.All">
+        <div class="nav-icon">
+            <Icon Name="IconName.HouseFill" Size="IconSize.x4" />
+        </div>
+        <span>Hjem</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="/trainingpage">
+        <div class="nav-icon">
+            <Icon Name="IconName.Activity" Size="IconSize.x4" />
+        </div>
+        <span>Træning</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="/exercisespage">
+        <div class="nav-icon">
+            <Icon Name="IconName.ListCheck" Size="IconSize.x4" />
+        </div>
+        <span>Øvelser</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="/bookingpage">
+        <div class="nav-icon">
+            <Icon Name="IconName.PeopleFill" Size="IconSize.x4" />
+        </div>
+        <span>Hold</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="/progresspage">
+        <div class="nav-icon">
+            <Icon Name="IconName.GraphUpArrow" Size="IconSize.x4" />
+        </div>
+        <span>Progress</span>
+    </NavLink>
+</div>
+
+@code {
+    private Offcanvas offcanvas = default!;
+
+    private async Task ShowOffcanvasAsync()
+    {
+        await offcanvas.ShowAsync();
+    }
+
+    private async Task HandleLogout()
+    {
+        await offcanvas.HideAsync();
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+
+    private static string? GetUserRole(ClaimsPrincipal user)
+    {
+        return user.FindFirst(ClaimTypes.Role)?.Value
+            ?? user.FindFirst("role")?.Value;
+    }
+}

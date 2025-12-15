@@ -1,0 +1,39 @@
+<div class="history-container">
+    <h5 class="mb-3">Seneste Træninger</h5>
+
+    @foreach (var workout in RecentWorkouts)
+    {
+        <Card Class="mb-3">
+            <CardBody>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">@workout.Name</h6>
+                        <small class="text-muted">@workout.Date</small>
+                    </div>
+                    <div class="text-end">
+                        <Badge Color="BadgeColor.Light">
+                            <Icon Name="IconName.Clock" Size="IconSize.x4" /> @workout.Duration min
+                        </Badge>
+                    </div>
+                </div>
+            </CardBody>
+        </Card>
+    }
+</div>
+
+@code {
+    private class Workout
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Date { get; set; } = string.Empty;
+        public int Duration { get; set; }
+    }
+
+    private List<Workout> RecentWorkouts = new()
+    {
+        new Workout { Name = "Bryst & Triceps", Date = "I dag", Duration = 65 },
+        new Workout { Name = "Ben & Core", Date = "I går", Duration = 55 },
+        new Workout { Name = "Ryg & Biceps", Date = "2 dage siden", Duration = 70 },
+        new Workout { Name = "Skuldre", Date = "3 dage siden", Duration = 50 }
+    };
+}

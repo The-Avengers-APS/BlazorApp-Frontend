@@ -1,0 +1,96 @@
+@page "/profile"
+@attribute [Authorize]
+
+<div class="container py-4">
+    <h3>Min Profil</h3>
+    <h4 class="text-muted mb-4">Velkommen tilbage, @userName</h4>
+
+    <!-- Profile Header Card -->
+    <div class="card mb-4">
+        <div class="card-body text-center">
+            <div class="mb-3">
+                <Icon Name="IconName.PersonCircle" Size="IconSize.x5" Color="IconColor.Primary" />
+            </div>
+            <h4 class="mb-1">@userName</h4>
+            <p class="text-muted mb-2">@userEmail</p>
+            <Badge Color="BadgeColor.Success">@membershipType</Badge>
+            <p class="text-muted mt-2 mb-0">
+                <small>Medlem siden @memberSince</small>
+            </p>
+        </div>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Min Statistik</h5>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="stat-item text-center p-3 border rounded">
+                        <Icon Name="IconName.Fire" Color="IconColor.Warning" Size="IconSize.x2" />
+                        <h3 class="mt-2 mb-0">@totalWorkouts</h3>
+                        <small class="text-muted">Træninger</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-item text-center p-3 border rounded">
+                        <Icon Name="IconName.CalendarCheck" Color="IconColor.Success" Size="IconSize.x2" />
+                        <h3 class="mt-2 mb-0">@currentStreak</h3>
+                        <small class="text-muted">Dage Streak</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-item text-center p-3 border rounded">
+                        <Icon Name="IconName.ClockHistory" Color="IconColor.Primary" Size="IconSize.x2" />
+                        <h3 class="mt-2 mb-0">@totalHours</h3>
+                        <small class="text-muted">Timer Total</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-item text-center p-3 border rounded">
+                        <Icon Name="IconName.TrophyFill" Color="IconColor.Danger" Size="IconSize.x2" />
+                        <h3 class="mt-2 mb-0">@achievements</h3>
+                        <small class="text-muted">Præstationer</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Card -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Konto Indstillinger</h5>
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item list-group-item-action">
+                    <Icon Name="IconName.PersonFill" />
+                    <span class="ms-2">Rediger Profil</span>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <Icon Name="IconName.Lock" />
+                    <span class="ms-2">Skift Adgangskode</span>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <Icon Name="IconName.Bell" />
+                    <span class="ms-2">Notifikationer</span>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <Icon Name="IconName.CreditCard" />
+                    <span class="ms-2">Abonnement</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string userName = "Mads Nielsen";
+    private string userEmail = "mads.nielsen@fitlife.dk";
+    private string membershipType = "Premium Medlem";
+    private string memberSince = "Januar 2024";
+
+    private int totalWorkouts = 127;
+    private int currentStreak = 5;
+    private int totalHours = 84;
+    private int achievements = 12;
+}

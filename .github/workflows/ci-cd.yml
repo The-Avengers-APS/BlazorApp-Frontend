@@ -1,0 +1,101 @@
+name: BlazorApp-Frontend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'BlazorApp/**'
+      - '.github/workflows/ci-cd.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'BlazorApp/**'
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: masterspliff/fitlife-frontend
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Configure GitHub Packages NuGet source
+        run: |
+          dotnet nuget add source "https://nuget.pkg.github.com/The-Avengers-APS/index.json" \
+            --name github \
+            --username ${{ github.actor }} \
+            --password ${{ secrets.NUGET_AUTH_TOKEN }} \
+            --store-password-in-clear-text
+
+      - name: Restore dependencies
+        run: dotnet restore BlazorApp/BlazorApp.csproj
+
+      - name: Build
+        run: dotnet build BlazorApp/BlazorApp.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish BlazorApp/BlazorApp.csproj --configuration Release --output ./publish
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blazorapp-frontend
+          path: ./publish
+
+  docker:
+    name: Build & Push Docker Image (Multi-Arch)
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=
+            type=ref,event=branch
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            GITHUB_TOKEN=${{ secrets.NUGET_AUTH_TOKEN }}
+            GITHUB_USERNAME=${{ github.actor }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

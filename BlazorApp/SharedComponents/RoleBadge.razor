@@ -1,0 +1,21 @@
+@if (!string.IsNullOrEmpty(Role))
+{
+    <span class="badge @GetBadgeClass()">@Role</span>
+}
+
+@code {
+    [Parameter]
+    public string? Role { get; set; }
+
+    private string GetBadgeClass() => Role switch
+    {
+        "Admin" => "bg-danger",
+        "Manager" => "bg-warning text-dark",
+        "Staff" => "bg-info",
+        "Trainer" => "bg-success",
+        "Lead" => "bg-primary",
+        "Partner" => "bg-secondary",
+        "Member" => "bg-dark text-light",
+        _ => "bg-light text-dark"
+    };
+}

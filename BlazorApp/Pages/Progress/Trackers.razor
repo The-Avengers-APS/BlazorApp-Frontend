@@ -1,0 +1,39 @@
+<div class="trackers-container mb-4">
+    <div class="row g-3">
+        <div class="col-12">
+            <Card>
+                <CardBody Class="text-center">
+                    <h1 class="display-4 mb-1">@WorkoutsThisWeek</h1>
+                    <h5 class="text-muted">Træninger denne uge</h5>
+                </CardBody>
+            </Card>
+        </div>
+        <div class="col-6">
+            <Card>
+                <CardBody Class="text-center">
+                    <h2 class="mb-1">@TotalWorkouts</h2>
+                    <small class="text-muted">Total træninger</small>
+                </CardBody>
+            </Card>
+        </div>
+        <div class="col-6">
+            <Card>
+                <CardBody Class="text-center">
+                    <h2 class="mb-1">@CurrentStreak</h2>
+                    <small class="text-muted">Nuværende streak</small>
+                </CardBody>
+            </Card>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int WorkoutsThisWeek { get; set; } = 5;
+
+    [Parameter]
+    public int TotalWorkouts { get; set; } = 127;
+
+    [Parameter]
+    public int CurrentStreak { get; set; } = 12;
+}

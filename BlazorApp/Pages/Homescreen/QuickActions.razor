@@ -1,0 +1,31 @@
+<div class="quick-actions-container">
+    <h5 class="section-title">Hurtige handlinger</h5>
+
+    <div class="actions-grid">
+        @foreach (var action in Actions)
+        {
+            <a href="@action.Href" class="action-button">
+                <div class="action-icon">
+                    <Icon Name="@GetIconName(action.IconName)" Size="IconSize.x5" />
+                </div>
+                <span class="action-label">@action.Label</span>
+            </a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<QuickAction> Actions { get; set; } = new();
+
+    private IconName GetIconName(string iconName) => iconName switch
+    {
+        "Calendar2Week" => IconName.Calendar2Week,
+        "ClipboardCheck" => IconName.ClipboardCheck,
+        "QrCode" => IconName.QrCode,
+        "BarChartLine" => IconName.BarChartLine,
+        "CheckCircle" => IconName.CheckCircle,
+        "PersonCircle" => IconName.PersonCircle,
+        _ => IconName.QuestionCircle
+    };
+}

@@ -1,0 +1,32 @@
+<div class="greetings-container">
+    <div class="greeting-text">
+        <h4>@GetGreeting()</h4>
+    </div>
+    <div class="streak-progress">
+        <div class="streak-info">
+            <Icon Name="IconName.Fire" Color="IconColor.Warning" />
+            <span class="streak-number">@Streak.CurrentStreak / @Streak.StreakGoal</span>
+        </div>
+        <ProgressBar Width="60" Height="8" Color="ProgressColor.Warning"
+                     Value="@StreakPercentage" />
+        <small class="text-muted">dage streak</small>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public UserStreak Streak { get; set; } = new();
+
+    private double StreakPercentage => (double)Streak.CurrentStreak / Streak.StreakGoal * 100;
+
+    private string GetGreeting()
+    {
+        var hour = DateTime.Now.Hour;
+        return hour switch
+        {
+            >= 5 and < 12 => "Godmorgen",
+            >= 12 and < 18 => "God middag",
+            _ => "God aften"
+        };
+    }
+}
