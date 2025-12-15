@@ -4,7 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components.Authorization;
-using Shared.Contracts.Models;
+using Shared.Contracts.DTOs;
 using Shared.Contracts.Models.Auth;
 
 public class AuthService : IAuthService
@@ -12,15 +12,18 @@ public class AuthService : IAuthService
     private readonly HttpClient _httpClient;
     private readonly ITokenStorageService _tokenStorage;
     private readonly AuthenticationStateProvider _authStateProvider;
+    private readonly TokenRefreshService _tokenRefreshService;
 
     public AuthService(
         HttpClient httpClient,
         ITokenStorageService tokenStorage,
-        AuthenticationStateProvider authStateProvider)
+        AuthenticationStateProvider authStateProvider,
+        TokenRefreshService tokenRefreshService)
     {
         _httpClient = httpClient;
         _tokenStorage = tokenStorage;
         _authStateProvider = authStateProvider;
+        _tokenRefreshService = tokenRefreshService;
     }
 
     public async Task<AuthResult> LoginAsync(string email, string password)
@@ -44,6 +47,9 @@ public class AuthService : IAuthService
                 }
 
                 ((JwtAuthenticationStateProvider)_authStateProvider).NotifyAuthenticationStateChanged();
+
+                // Schedule proactive token refresh
+                _tokenRefreshService.ScheduleRefresh();
             }
 
             return result ?? AuthResult.Failed("Unknown error");
@@ -54,15 +60,16 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<AuthResult> RegisterAsync(User user)
+    public async Task<AuthResult> RegisterAsync(RegisterUserRequest request)
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("api/users/register", user);
+            var response = await _httpClient.PostAsJsonAsync("api/users/register", request);
 
             if (response.IsSuccessStatusCode)
             {
-                return await LoginAsync(user.Email!, user.Password!);
+                // Auto-login after successful registration
+                return await LoginAsync(request.Email, request.Password);
             }
 
             var error = await response.Content.ReadAsStringAsync();
@@ -134,7 +141,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<User?> GetCurrentUserAsync()
+    public async Task<UserDto?> GetCurrentUserAsync()
     {
         var userInfoJson = await _tokenStorage.GetUserInfoAsync();
         if (string.IsNullOrEmpty(userInfoJson))
@@ -144,7 +151,7 @@ public class AuthService : IAuthService
 
         try
         {
-            return JsonSerializer.Deserialize<User>(userInfoJson);
+            return JsonSerializer.Deserialize<UserDto>(userInfoJson);
         }
         catch
         {

@@ -9,15 +9,26 @@
 
     <ItemGroup>
         <PackageReference Include="Blazor.Bootstrap" Version="3.5.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all"/>
+        <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+        <PackageReference Include="Shared.Contracts" Version="0.0.22" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.1" />
     </ItemGroup>
+
 
     <ItemGroup>
       <_ContentIncludedByDefault Remove="Pages\News\NewsPage.razor" />
       <_ContentIncludedByDefault Remove="wwwroot\sample-data\homescreen-data.json" />
       <_ContentIncludedByDefault Remove="wwwroot\sample-data\training-programs.json" />
       <_ContentIncludedByDefault Remove="wwwroot\sample-data\weather.json" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <Folder Include="wwwroot\background-images\" />
     </ItemGroup>
 
 </Project>

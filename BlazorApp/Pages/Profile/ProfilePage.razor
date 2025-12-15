@@ -1,12 +1,14 @@
 @page "/profile"
-@using BlazorBootstrap  
+@attribute [Authorize]
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
 
 <div class="profile-container">
     <div class="container py-4">
         <!-- Profile Header -->
         <div class="profile-header mb-4">
             <h2 class="profile-title">Min Profil</h2>
-            <p class="profile-subtitle">Velkommen tilbage, @userName</p>
+            <p class="profile-subtitle">Velkommen tilbage, @DisplayName</p>
         </div>
 
         <!-- Profile Card -->
@@ -15,10 +17,9 @@
                 <div class="profile-avatar">
                     <Icon Name="IconName.PersonCircle" Size="IconSize.x5" />
                 </div>
-                <h3 class="profile-name">@userName</h3>
-                <p class="profile-email">@userEmail</p>
-                <span class="membership-badge">@membershipType</span>
-                <p class="member-since">Medlem siden @memberSince</p>
+                <h3 class="profile-name">@DisplayName</h3>
+                <p class="profile-email">@UserEmail</p>
+                <span class="membership-badge">@MembershipType</span>
             </div>
         </div>
 
@@ -100,18 +101,49 @@
 </div>
 
 @code {
-    private string userName = "Mads Nielsen";
-    private string userEmail = "mads.nielsen@fitlife.dk";
-    private string membershipType = "Premium Medlem";
-    private string memberSince = "Januar 2024";
+    private UserDto? _user;
+    private string? _userRole;
+    private bool _isLoading = true;
 
-    private int totalWorkouts = 127;
-    private int currentStreak = 5;
-    private int totalHours = 84;
-    private int achievements = 12;
+    // Stats - will come from StatsService API later
+    private int totalWorkouts = 0;
+    private int currentStreak = 0;
+    private int totalHours = 0;
+    private int achievements = 0;
 
-    private void Logout()
+    protected override async Task OnInitializedAsync()
     {
-        // Implement logout logic
+        _user = await AuthService.GetCurrentUserAsync();
+        _userRole = await AuthService.GetCurrentRoleAsync();
+        _isLoading = false;
+
+        // TODO: Load stats from StatsService API
+    }
+
+    private string DisplayName => _user switch
+    {
+        { GivenName: not null, FamilyName: not null } => $"{_user.GivenName} {_user.FamilyName}",
+        { GivenName: not null } => _user.GivenName,
+        { Email: not null } => _user.Email,
+        _ => "Bruger"
+    };
+
+    private string UserEmail => _user?.Email ?? "";
+
+    private string MembershipType => _userRole switch
+    {
+        "Admin" => "Administrator",
+        "Manager" => "Manager",
+        "Trainer" => "Træner",
+        "Staff" => "Personale",
+        "Lead" => "Gratis bruger",
+        "Partner" => "Partner",
+        _ => "Medlem"
+    };
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login", forceLoad: true);
     }
 }

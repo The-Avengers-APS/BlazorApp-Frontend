@@ -1,49 +1,65 @@
 @page "/"
+@attribute [Authorize]
 
 <PageTitle>FitLife - Hjem</PageTitle>
 
 <div class="homescreen-container">
-    <Greetings Streak="@userStreak" />
-    <CheckIn Streak="@userStreak" />
-    <Recommended TodaysPlan="@todaysPlan" NextSession="@nextSession" />
-    <LiveActivity Occupancy="@gymOccupancy" />
-    <QuickActions Actions="@quickActions" />
+    <Greetings Streak="@_userStreak" />
+    <CheckIn Streak="@_userStreak" />
+    <Recommended TodaysPlan="@_todaysPlan" NextSession="@_nextSession" />
+    <LiveActivity Occupancy="@_gymOccupancy" />
+    <QuickActions Actions="@_quickActions" />
 </div>
 
 @code {
-    private UserStreak userStreak = new()
+    // User-specific data - will come from StatsService API
+    private UserStreak _userStreak = new()
     {
-        CurrentStreak = 5,
+        CurrentStreak = 0,
         StreakGoal = 7,
-        LastCheckIn = DateTime.Today,
+        LastCheckIn = DateTime.MinValue,
         CheckedInToday = false
     };
 
-    private TrainingPlan todaysPlan = new()
+    // Will come from ExerciseService/TrainingService API
+    private TrainingPlan _todaysPlan = new()
     {
-        Name = "Bryst & Triceps",
-        ExerciseCount = 8,
-        DurationMinutes = 45
+        Name = "Ingen plan",
+        ExerciseCount = 0,
+        DurationMinutes = 0
     };
 
-    private TeamSession nextSession = new()
+    // Will come from BookingService API
+    private TeamSession _nextSession = new()
     {
-        Name = "HIIT Cardio",
-        Time = "18:00",
-        AvailableSpots = 5
+        Name = "Ingen booking",
+        Time = "-",
+        AvailableSpots = 0
     };
 
-    private GymOccupancy gymOccupancy = new()
+    // Will come from real-time occupancy API
+    private GymOccupancy _gymOccupancy = new()
     {
-        CurrentOccupancy = 42,
+        CurrentOccupancy = 0,
         MaxCapacity = 150
     };
 
-    private List<QuickAction> quickActions = new()
+    // Navigation quick actions - these are static
+    private List<QuickAction> _quickActions = new()
     {
         new QuickAction { IconName = "ClipboardCheck", Label = "Start Træning", Href = "/trainingpage" },
         new QuickAction { IconName = "CalendarCheck", Label = "Book Hold", Href = "/bookingpage" },
         new QuickAction { IconName = "GraphUpArrow", Label = "Min Progress", Href = "/progresspage" },
         new QuickAction { IconName = "ListCheck", Label = "Øvelser", Href = "/exercisespage" }
     };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TODO: Load data from respective APIs
+        // _userStreak = await StatsService.GetUserStreakAsync();
+        // _todaysPlan = await TrainingService.GetTodaysPlanAsync();
+        // _nextSession = await BookingService.GetNextSessionAsync();
+        // _gymOccupancy = await OccupancyService.GetCurrentOccupancyAsync();
+        await Task.CompletedTask;
+    }
 }

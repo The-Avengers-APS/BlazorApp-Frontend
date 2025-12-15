@@ -34,19 +34,14 @@ RUN dotnet build "BlazorApp/BlazorApp.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "BlazorApp/BlazorApp.csproj" -c Release -o /app/publish
 
-# Runtime stage - use NGINX to serve the static Blazor WASM files
+# Runtime stage - nginx to serve static Blazor WASM files
 FROM nginx:alpine AS final
 
-# Copy the published Blazor WASM app to NGINX html folder
 COPY --from=publish /app/publish/wwwroot /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy custom NGINX config for Blazor
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+RUN chmod -R 755 /usr/share/nginx/html
 
-# Fix permissions for all files
-RUN chmod -R 755 /usr/share/nginx/html && \
-    find /usr/share/nginx/html -type f -exec chmod 644 {} \;
-
-EXPOSE 80
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]
