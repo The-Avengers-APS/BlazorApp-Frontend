@@ -1,14 +1,152 @@
 @page "/progresspage"
+@inject IStatsService StatsService
+@inject IAuthService AuthService
+@inject IExerciseService ExerciseService
+@inject IUserService UserService
+@attribute [Authorize]
 
 <div class="container py-4">
     <h3>Min Progress</h3>
     <h4 class="text-muted mb-4">Følg dine fremskridt</h4>
 
-    <Trackers />
+    @if (IsLoading)
+    {
+        <div class="text-center py-5">
+            <Spinner Type="SpinnerType.Border" />
+            <p class="mt-2 text-muted">Henter statistik...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <Alert Color="AlertColor.Danger">
+            <Icon Name="IconName.ExclamationTriangle" /> @ErrorMessage
+            <Button Color="ButtonColor.Link" @onclick="LoadData">Prøv igen</Button>
+        </Alert>
+    }
+    else
+    {
+        @if (WeightHistory.Any() || CurrentMetrics?.WeightKg.HasValue == true)
+        {
+            <div class="weight-progress-section mb-4">
+                <h5 class="mb-3">Vægtprogression</h5>
+                <Card>
+                    <CardBody>
+                        @if (CurrentMetrics?.WeightKg.HasValue == true)
+                        {
+                            <div class="current-weight mb-3">
+                                <h2 class="mb-0">@CurrentMetrics.WeightKg.Value.ToString("F1") kg</h2>
+                                <small class="text-muted">Nuværende vægt</small>
+                            </div>
+                        }
+                        @if (WeightHistory.Any())
+                        {
+                            <div class="weight-history">
+                                <small class="text-muted">Seneste @WeightHistory.Count målinger</small>
+                                <div class="weight-entries mt-2">
+                                    @foreach (var entry in WeightHistory.Take(5))
+                                    {
+                                        <div class="d-flex justify-content-between border-bottom py-2">
+                                            <span>@entry.RecordedAt.ToString("d. MMM")</span>
+                                            <span class="fw-bold">@entry.WeightKg.ToString("F1") kg</span>
+                                        </div>
+                                    }
+                                </div>
+                                @if (GetWeightChange() != 0)
+                                {
+                                    <div class="weight-change mt-3">
+                                        <Badge Color="@(GetWeightChange() < 0 ? BadgeColor.Success : BadgeColor.Warning)">
+                                            @(GetWeightChange() > 0 ? "+" : "")@GetWeightChange().ToString("F1") kg
+                                        </Badge>
+                                        <small class="text-muted ms-2">sidste 30 dage</small>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </CardBody>
+                </Card>
+            </div>
+        }
 
-    <History />
+        <Trackers WorkoutsThisWeek="@WorkoutsThisWeek"
+                  TotalWorkouts="@TotalWorkouts"
+                  CurrentStreak="@CurrentStreak"
+                  CurrentWeight="@CurrentMetrics?.WeightKg" />
+
+        <History UserWorkouts="@UserWorkouts" WorkoutNames="@WorkoutNames" />
+    }
 </div>
 
 @code {
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
+    private UserStatisticsDto? Statistics { get; set; }
+    private List<UserWorkoutDto> UserWorkouts { get; set; } = [];
+    private List<BodyMetricLogDto> WeightHistory { get; set; } = [];
+    private UserMetricsDto? CurrentMetrics { get; set; }
+    private Dictionary<Guid, string> WorkoutNames { get; set; } = [];
 
+    private int WorkoutsThisWeek => CalculateWorkoutsThisWeek();
+    private int TotalWorkouts => Statistics?.Training.TotalSessions ?? 0;
+    private int CurrentStreak => Statistics?.TotalCheckIns ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var user = await AuthService.GetCurrentUserAsync();
+            if (user == null)
+            {
+                ErrorMessage = "Kunne ikke hente brugerdata.";
+                return;
+            }
+
+            // Load all data in parallel for better performance
+            var statsTask = StatsService.GetMyStatisticsAsync();
+            var workoutsTask = ExerciseService.GetUserWorkoutsAsync(user.Id);
+            var metricsTask = UserService.GetMyMetricsAsync();
+            var weightHistoryTask = UserService.GetMyWeightHistoryAsync(30);
+            var workoutDefinitionsTask = ExerciseService.GetAllWorkoutsAsync();
+
+            await Task.WhenAll(statsTask, workoutsTask, metricsTask, weightHistoryTask, workoutDefinitionsTask);
+
+            Statistics = statsTask.Result;
+            UserWorkouts = workoutsTask.Result;
+            CurrentMetrics = metricsTask.Result;
+            WeightHistory = weightHistoryTask.Result;
+
+            // Build workout name lookup dictionary
+            var workoutDefs = workoutDefinitionsTask.Result;
+            WorkoutNames = workoutDefs.ToDictionary(w => w.Id, w => w.Title);
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Kunne ikke hente statistik. Prøv igen senere.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private int CalculateWorkoutsThisWeek()
+    {
+        var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + (int)DayOfWeek.Monday);
+        return UserWorkouts.Count(w => w.CompletedAt.HasValue && w.CompletedAt.Value >= startOfWeek);
+    }
+
+    private decimal GetWeightChange()
+    {
+        if (WeightHistory.Count < 2) return 0;
+        var latest = WeightHistory.First().WeightKg;
+        var oldest = WeightHistory.Last().WeightKg;
+        return latest - oldest;
+    }
 }

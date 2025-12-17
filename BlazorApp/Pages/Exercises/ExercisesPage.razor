@@ -1,30 +1,235 @@
 @page "/exercisespage"
+@inject IExerciseService ExerciseService
+@inject IAuthService AuthService
+@attribute [Authorize]
 
 <div class="container py-4">
-    <h3>Øvelser</h3>
-    <h4 class="text-muted mb-4">Udforsk øvelses-biblioteket</h4>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">Øvelser</h3>
+            <h5 class="text-muted mb-0">Udforsk øvelses-biblioteket</h5>
+        </div>
+        @if (IsAdmin)
+        {
+            <Button Color="ButtonColor.Primary" @onclick="() => ShowCreateModal = true">
+                <Icon Name="IconName.PlusLg" /> Opret Øvelse
+            </Button>
+        }
+    </div>
 
-    <div class="ex-search">
+    <div class="ex-search mb-4">
         <Icon Name="IconName.Search" class="ex-search-icon" />
-        <input type="text" class="ex-search-input" placeholder="Søg efter øvelser..." />
+        <input type="text" class="ex-search-input" placeholder="Søg efter øvelser..." @bind="SearchTerm" @bind:event="oninput" />
     </div>
 
-    <div class="exercise-cards">
-
-        <ExerciseCard Title="Dumbbell Curl" Category="Upper Body" Difficulty="Begynder" />
-        <ExerciseCard Title="Hamstring Curl" Category="Lower Body" Difficulty="Mellem" />
-        <ExerciseCard Title="Six-Pack Crunch" Category="Core" Difficulty="Begynder" />
-        <ExerciseCard Title="Armbøjninger" Category="Upper Body" Difficulty="Mellem" />
-
-        <ExerciseCard Title="Bench Press" Category="Upper Body" Difficulty="Avanceret" />
-        <ExerciseCard Title="Deadlift" Category="Lower Body" Difficulty="Avanceret" />
-        <ExerciseCard Title="Leg Press" Category="Lower Body" Difficulty="Begynder" />
-        <ExerciseCard Title="Planke" Category="Core" Difficulty="Begynder" />
-
-        <ExerciseCard Title="Russian Twist" Category="Core" Difficulty="Mellem" />
-        <ExerciseCard Title="Mountain Climbers" Category="Full Body" Difficulty="Mellem" />
-        <ExerciseCard Title="Lateral Raise" Category="Upper Body" Difficulty="Begynder" />
-        <ExerciseCard Title="Dips" Category="Upper Body" Difficulty="Avanceret" />
-
-    </div>
+    @if (IsLoading)
+    {
+        <div class="text-center py-5">
+            <Spinner Type="SpinnerType.Border" />
+            <p class="mt-2 text-muted">Henter øvelser...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <Alert Color="AlertColor.Danger">
+            <Icon Name="IconName.ExclamationTriangle" /> @ErrorMessage
+            <Button Color="ButtonColor.Link" @onclick="LoadExercises">Prøv igen</Button>
+        </Alert>
+    }
+    else if (!FilteredExercises.Any())
+    {
+        <Alert Color="AlertColor.Info">
+            @if (string.IsNullOrEmpty(SearchTerm))
+            {
+                <span>Ingen øvelser fundet. Seed databasen via Postman.</span>
+            }
+            else
+            {
+                <span>Ingen øvelser matcher din søgning.</span>
+            }
+        </Alert>
+    }
+    else
+    {
+        <div class="exercise-cards">
+            @foreach (var exercise in FilteredExercises)
+            {
+                <ExercisesCard Exercise="exercise" />
+            }
+        </div>
+    }
 </div>
+
+@if (ShowCreateModal)
+{
+    <Modal @ref="CreateModal" Title="Opret ny øvelse" IsVerticallyCentered="true">
+        <BodyTemplate>
+            <div class="mb-3">
+                <label class="form-label">Navn *</label>
+                <input type="text" class="form-control" @bind="NewExercise.Name" placeholder="f.eks. Bench Press" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Muskelgruppe</label>
+                <input type="text" class="form-control" @bind="NewExercise.MuscleGroup" placeholder="f.eks. Chest, Back, Legs" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Udstyr</label>
+                <input type="text" class="form-control" @bind="NewExercise.Equipment" placeholder="f.eks. Barbell, Dumbbells, None" />
+            </div>
+            <div class="row">
+                <div class="col-6 mb-3">
+                    <label class="form-label">Standard sæt</label>
+                    <input type="number" class="form-control" @bind="NewExercise.DefaultSets" min="1" />
+                </div>
+                <div class="col-6 mb-3">
+                    <label class="form-label">Standard reps</label>
+                    <input type="number" class="form-control" @bind="NewExercise.DefaultReps" min="1" />
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(CreateErrorMessage))
+            {
+                <Alert Color="AlertColor.Danger">@CreateErrorMessage</Alert>
+            }
+        </BodyTemplate>
+        <FooterTemplate>
+            <Button Color="ButtonColor.Secondary" @onclick="CloseCreateModal">Annuller</Button>
+            <Button Color="ButtonColor.Primary" @onclick="CreateExercise" Disabled="IsCreating">
+                @if (IsCreating)
+                {
+                    <Spinner Size="SpinnerSize.Small" />
+                    <span> Opretter...</span>
+                }
+                else
+                {
+                    <span>Opret Øvelse</span>
+                }
+            </Button>
+        </FooterTemplate>
+    </Modal>
+}
+
+@code {
+    private List<ExerciseDto> Exercises { get; set; } = [];
+    private bool IsLoading { get; set; } = true;
+    private bool IsAdmin { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string SearchTerm { get; set; } = string.Empty;
+
+    // Create modal state
+    private bool ShowCreateModal { get; set; }
+    private Modal? CreateModal { get; set; }
+    private bool IsCreating { get; set; }
+    private string? CreateErrorMessage { get; set; }
+    private CreateExerciseModel NewExercise { get; set; } = new();
+
+    private IEnumerable<ExerciseDto> FilteredExercises => string.IsNullOrWhiteSpace(SearchTerm)
+        ? Exercises
+        : Exercises.Where(e =>
+            e.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+            (e.MuscleGroup?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (e.Equipment?.Any(eq => eq.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)) ?? false));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var role = await AuthService.GetCurrentRoleAsync();
+        IsAdmin = role is "Admin" or "Manager";
+
+        await LoadExercises();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShowCreateModal && CreateModal != null)
+        {
+            await CreateModal.ShowAsync();
+        }
+    }
+
+    private async Task LoadExercises()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            Exercises = await ExerciseService.GetAllExercisesAsync();
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Kunne ikke hente øvelser. Prøv igen senere.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task CreateExercise()
+    {
+        CreateErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(NewExercise.Name))
+        {
+            CreateErrorMessage = "Navn er påkrævet.";
+            return;
+        }
+        if (NewExercise.DefaultSets < 1)
+        {
+            CreateErrorMessage = "Sæt skal være mindst 1.";
+            return;
+        }
+        if (NewExercise.DefaultReps < 1)
+        {
+            CreateErrorMessage = "Reps skal være mindst 1.";
+            return;
+        }
+
+        IsCreating = true;
+
+        var equipmentList = string.IsNullOrWhiteSpace(NewExercise.Equipment)
+            ? null
+            : NewExercise.Equipment.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+        var createRequest = new CreateExerciseRequest(
+            NewExercise.Name,
+            string.IsNullOrWhiteSpace(NewExercise.MuscleGroup) ? null : NewExercise.MuscleGroup,
+            equipmentList,
+            NewExercise.DefaultSets,
+            NewExercise.DefaultReps.ToString()
+        );
+
+        var result = await ExerciseService.CreateExerciseAsync(createRequest);
+
+        if (result != null)
+        {
+            await CloseCreateModal();
+            NewExercise = new CreateExerciseModel();
+            await LoadExercises();
+        }
+        else
+        {
+            CreateErrorMessage = "Kunne ikke oprette øvelsen. Prøv igen.";
+        }
+
+        IsCreating = false;
+    }
+
+    private async Task CloseCreateModal()
+    {
+        if (CreateModal != null)
+        {
+            await CreateModal.HideAsync();
+        }
+        ShowCreateModal = false;
+        CreateErrorMessage = null;
+    }
+
+    private class CreateExerciseModel
+    {
+        public string Name { get; set; } = "";
+        public string MuscleGroup { get; set; } = "";
+        public string Equipment { get; set; } = "";
+        public int DefaultSets { get; set; } = 3;
+        public int DefaultReps { get; set; } = 10;
+    }
+}

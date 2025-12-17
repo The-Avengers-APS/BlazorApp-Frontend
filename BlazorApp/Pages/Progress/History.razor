@@ -1,39 +1,77 @@
 <div class="history-container">
     <h5 class="mb-3">Seneste Træninger</h5>
 
-    @foreach (var workout in RecentWorkouts)
+    @if (!UserWorkouts.Any())
     {
-        <Card Class="mb-3">
-            <CardBody>
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1">@workout.Name</h6>
-                        <small class="text-muted">@workout.Date</small>
+        <Alert Color="AlertColor.Info">
+            Ingen træningshistorik endnu. Start din første træning!
+        </Alert>
+    }
+    else
+    {
+        @foreach (var workout in GetRecentWorkouts())
+        {
+            <Card Class="mb-3">
+                <CardBody>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">@GetWorkoutName(workout)</h6>
+                            <small class="text-muted">@GetRelativeDate(workout.CompletedAt ?? workout.Date)</small>
+                        </div>
+                        <div class="text-end">
+                            @if (workout.CompletedAt.HasValue)
+                            {
+                                <Badge Color="BadgeColor.Success">
+                                    <Icon Name="IconName.CheckCircle" Size="IconSize.x4" /> Fuldført
+                                </Badge>
+                            }
+                            else
+                            {
+                                <Badge Color="BadgeColor.Warning">
+                                    <Icon Name="IconName.PlayCircle" Size="IconSize.x4" /> I gang
+                                </Badge>
+                            }
+                        </div>
                     </div>
-                    <div class="text-end">
-                        <Badge Color="BadgeColor.Light">
-                            <Icon Name="IconName.Clock" Size="IconSize.x4" /> @workout.Duration min
-                        </Badge>
-                    </div>
-                </div>
-            </CardBody>
-        </Card>
+                </CardBody>
+            </Card>
+        }
     }
 </div>
 
 @code {
-    private class Workout
+    [Parameter]
+    public List<UserWorkoutDto> UserWorkouts { get; set; } = [];
+
+    [Parameter]
+    public Dictionary<Guid, string> WorkoutNames { get; set; } = [];
+
+    private IEnumerable<UserWorkoutDto> GetRecentWorkouts()
     {
-        public string Name { get; set; } = string.Empty;
-        public string Date { get; set; } = string.Empty;
-        public int Duration { get; set; }
+        return UserWorkouts
+            .OrderByDescending(w => w.CompletedAt ?? w.Date)
+            .Take(10);
     }
 
-    private List<Workout> RecentWorkouts = new()
+    private string GetWorkoutName(UserWorkoutDto workout)
     {
-        new Workout { Name = "Bryst & Triceps", Date = "I dag", Duration = 65 },
-        new Workout { Name = "Ben & Core", Date = "I går", Duration = 55 },
-        new Workout { Name = "Ryg & Biceps", Date = "2 dage siden", Duration = 70 },
-        new Workout { Name = "Skuldre", Date = "3 dage siden", Duration = 50 }
-    };
+        return WorkoutNames.TryGetValue(workout.WorkoutId, out var name)
+            ? name
+            : "Træning";
+    }
+
+    private string GetRelativeDate(DateTime date)
+    {
+        var today = DateTime.Today;
+        var workoutDate = date.Date;
+
+        if (workoutDate == today)
+            return "I dag";
+        if (workoutDate == today.AddDays(-1))
+            return "I går";
+        if (workoutDate > today.AddDays(-7))
+            return $"{(today - workoutDate).Days} dage siden";
+
+        return workoutDate.ToString("d. MMM yyyy");
+    }
 }

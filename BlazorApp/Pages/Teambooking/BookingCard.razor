@@ -1,48 +1,188 @@
+@inject IBookingService BookingService
+@inject IAuthService AuthService
+
 <Card Class="mb-3">
     <CardBody>
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
-                <h5 class="card-title mb-1">@Title</h5>
-                <p class="text-muted mb-0">@Instructor</p>
+                <h5 class="card-title mb-1">@Booking.Name</h5>
+                <p class="text-muted mb-0">@Booking.Genre</p>
             </div>
-            <Badge Color="BadgeColor.Primary">@DateTime</Badge>
+            <Badge Color="@GetTimeBadgeColor()">@FormatDateTime()</Badge>
         </div>
         <div class="d-flex gap-3 mb-3 text-muted">
             <small>
-                <Icon Name="IconName.Clock" Size="IconSize.x4" /> @Duration
+                <Icon Name="IconName.Clock" Size="IconSize.x4" /> @FormatDuration()
             </small>
             <small>
-                <Icon Name="IconName.PeopleFill" Size="IconSize.x4" /> @SpotsAvailable
+                <Icon Name="IconName.PeopleFill" Size="IconSize.x4" /> @Booking.AvailableSpots/@Booking.Capacity ledige
             </small>
             <small>
-                <Icon Name="IconName.GeoAlt" Size="IconSize.x4" /> @Location
+                <Icon Name="IconName.GeoAlt" Size="IconSize.x4" /> @Booking.CenterName
             </small>
         </div>
-        <Button Color="ButtonColor.Primary" Class="w-100" @onclick="BookClass">Book Hold</Button>
+
+        @if (IsLoading)
+        {
+            <Button Color="ButtonColor.Secondary" Class="w-100" Disabled="true">
+                <Spinner Size="SpinnerSize.Small" /> Arbejder...
+            </Button>
+        }
+        else if (IsParticipating)
+        {
+            <Button Color="ButtonColor.Danger" Class="w-100" @onclick="LeaveClass">
+                Afmeld Hold
+            </Button>
+        }
+        else if (Booking.IsFull)
+        {
+            <Button Color="ButtonColor.Secondary" Class="w-100" Disabled="true">
+                Fuldt booket
+            </Button>
+        }
+        else
+        {
+            <Button Color="ButtonColor.Primary" Class="w-100" @onclick="JoinClass">
+                Book Hold
+            </Button>
+        }
+
+        @if (IsAdmin && !IsLoading)
+        {
+            <Button Color="ButtonColor.Danger" Outline="true" Class="w-100 mt-2" @onclick="DeleteClass">
+                <Icon Name="IconName.Trash" /> Slet Hold
+            </Button>
+        }
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <Alert Color="AlertColor.Danger" Class="mt-2 mb-0">@ErrorMessage</Alert>
+        }
     </CardBody>
 </Card>
 
 @code {
     [Parameter]
-    public string Title { get; set; } = string.Empty;
+    public required BookingDto Booking { get; set; }
 
     [Parameter]
-    public string Instructor { get; set; } = string.Empty;
+    public EventCallback OnBookingChanged { get; set; }
 
     [Parameter]
-    public string DateTime { get; set; } = string.Empty;
+    public bool IsAdmin { get; set; }
 
-    [Parameter]
-    public string Duration { get; set; } = string.Empty;
+    private bool IsParticipating { get; set; }
+    private bool IsLoading { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string? CurrentUserId { get; set; }
 
-    [Parameter]
-    public string SpotsAvailable { get; set; } = string.Empty;
-
-    [Parameter]
-    public string Location { get; set; } = string.Empty;
-
-    private void BookClass()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: Implement booking logic
+        var user = await AuthService.GetCurrentUserAsync();
+        CurrentUserId = user?.Id.ToString();
+
+        if (CurrentUserId != null)
+        {
+            IsParticipating = Booking.Participants.Contains(CurrentUserId);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (CurrentUserId != null)
+        {
+            IsParticipating = Booking.Participants.Contains(CurrentUserId);
+        }
+    }
+
+    private async Task JoinClass()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        var success = await BookingService.JoinBookingAsync(Booking.Id);
+
+        if (success)
+        {
+            IsParticipating = true;
+            await OnBookingChanged.InvokeAsync();
+        }
+        else
+        {
+            ErrorMessage = "Kunne ikke tilmelde dig holdet. Prøv igen.";
+        }
+
+        IsLoading = false;
+    }
+
+    private async Task LeaveClass()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        var success = await BookingService.LeaveBookingAsync(Booking.Id);
+
+        if (success)
+        {
+            IsParticipating = false;
+            await OnBookingChanged.InvokeAsync();
+        }
+        else
+        {
+            ErrorMessage = "Kunne ikke afmelde dig holdet. Prøv igen.";
+        }
+
+        IsLoading = false;
+    }
+
+    private async Task DeleteClass()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        var success = await BookingService.DeleteBookingAsync(Booking.Id);
+
+        if (success)
+        {
+            await OnBookingChanged.InvokeAsync();
+        }
+        else
+        {
+            ErrorMessage = "Kunne ikke slette holdet. Prøv igen.";
+        }
+
+        IsLoading = false;
+    }
+
+    private string FormatDateTime()
+    {
+        var today = DateTime.Today;
+        var bookingDate = Booking.TimeStart.Date;
+
+        if (bookingDate == today)
+            return $"I dag {Booking.TimeStart:HH:mm}";
+        if (bookingDate == today.AddDays(1))
+            return $"I morgen {Booking.TimeStart:HH:mm}";
+
+        return $"{Booking.TimeStart:dddd HH:mm}";
+    }
+
+    private string FormatDuration()
+    {
+        var duration = Booking.TimeEnd - Booking.TimeStart;
+        return $"{(int)duration.TotalMinutes} min";
+    }
+
+    private BadgeColor GetTimeBadgeColor()
+    {
+        var today = DateTime.Today;
+        var bookingDate = Booking.TimeStart.Date;
+
+        if (bookingDate == today)
+            return BadgeColor.Success;
+        if (bookingDate == today.AddDays(1))
+            return BadgeColor.Primary;
+
+        return BadgeColor.Secondary;
     }
 }

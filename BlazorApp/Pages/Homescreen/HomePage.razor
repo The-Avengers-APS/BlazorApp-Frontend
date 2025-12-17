@@ -1,4 +1,7 @@
 @page "/"
+@inject IBookingService BookingService
+@inject IAuthService AuthService
+@inject IStatsService StatsService
 @attribute [Authorize]
 
 <PageTitle>FitLife - Hjem</PageTitle>
@@ -55,11 +58,96 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // TODO: Load data from respective APIs
-        // _userStreak = await StatsService.GetUserStreakAsync();
-        // _todaysPlan = await TrainingService.GetTodaysPlanAsync();
-        // _nextSession = await BookingService.GetNextSessionAsync();
-        // _gymOccupancy = await OccupancyService.GetCurrentOccupancyAsync();
-        await Task.CompletedTask;
+        await Task.WhenAll(
+            LoadNextBookingAsync(),
+            LoadUserStreakAsync()
+        );
+    }
+
+    private async Task LoadUserStreakAsync()
+    {
+        try
+        {
+            var statistics = await StatsService.GetMyStatisticsAsync();
+            if (statistics != null)
+            {
+                _userStreak = new UserStreak
+                {
+                    CurrentStreak = statistics.TotalCheckIns,
+                    StreakGoal = 7,
+                    LastCheckIn = statistics.Training.LastSessionDate ?? DateTime.MinValue,
+                    CheckedInToday = statistics.Training.LastSessionDate?.Date == DateTime.Today
+                };
+            }
+        }
+        catch
+        {
+            // Keep default streak on error
+        }
+    }
+
+    private async Task LoadNextBookingAsync()
+    {
+        try
+        {
+            var user = await AuthService.GetCurrentUserAsync();
+            var userId = user?.Id.ToString();
+
+            var bookings = await BookingService.GetAllBookingsAsync();
+
+            // Find the user's next upcoming booking (one they're participating in)
+            // Or if none, show the next available booking
+            var now = DateTime.UtcNow;
+
+            var userNextBooking = bookings
+                .Where(b => b.TimeStart > now && userId != null && b.Participants.Contains(userId))
+                .OrderBy(b => b.TimeStart)
+                .FirstOrDefault();
+
+            if (userNextBooking != null)
+            {
+                _nextSession = new TeamSession
+                {
+                    Name = userNextBooking.Name,
+                    Time = FormatBookingTime(userNextBooking.TimeStart),
+                    AvailableSpots = userNextBooking.AvailableSpots
+                };
+            }
+            else
+            {
+                // Show next available booking if user hasn't booked anything
+                var nextAvailable = bookings
+                    .Where(b => b.TimeStart > now && !b.IsFull)
+                    .OrderBy(b => b.TimeStart)
+                    .FirstOrDefault();
+
+                if (nextAvailable != null)
+                {
+                    _nextSession = new TeamSession
+                    {
+                        Name = nextAvailable.Name,
+                        Time = FormatBookingTime(nextAvailable.TimeStart),
+                        AvailableSpots = nextAvailable.AvailableSpots
+                    };
+                }
+            }
+        }
+        catch
+        {
+            // Keep default "Ingen booking" on error
+        }
+    }
+
+    private string FormatBookingTime(DateTime timeStart)
+    {
+        var today = DateTime.Today;
+        var bookingDate = timeStart.Date;
+
+        if (bookingDate == today)
+            return $"I dag {timeStart:HH:mm}";
+        if (bookingDate == today.AddDays(1))
+            return $"I morgen {timeStart:HH:mm}";
+
+        return $"{timeStart:dddd HH:mm}";
     }
 }

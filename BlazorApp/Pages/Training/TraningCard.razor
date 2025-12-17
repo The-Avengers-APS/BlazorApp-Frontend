@@ -1,43 +1,126 @@
-@using Microsoft.AspNetCore.Components
+@inject IExerciseService ExerciseService
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
 
-<div class="training-card" @onclick="NavigateToProgram">
-    <h4 class="training-card-title">@Title</h4>
+<div class="training-card-wrapper" @onclick="NavigateToProgram">
+    <Card Class="mb-3 training-card">
+        <CardBody>
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="card-title mb-0">@Program.Title</h5>
+                <Badge Color="@GetDifficultyColor()">@Program.Difficulty</Badge>
+            </div>
 
-    <span class="training-level @GetLevelClass()">
-        @Level
-    </span>
+            @if (!string.IsNullOrEmpty(Program.ShortDescription ?? Program.Description))
+            {
+                <p class="text-muted mb-3">@(Program.ShortDescription ?? Program.Description)</p>
+            }
 
-    <p class="training-description">@Description</p>
+            <div class="d-flex gap-3 mb-3 text-muted">
+                <small>
+                    <Icon Name="IconName.Calendar3" Size="IconSize.x4" /> @Program.DurationWeeks uger
+                </small>
+                <small>
+                    <Icon Name="IconName.ListCheck" Size="IconSize.x4" /> @Program.TotalWorkouts træninger
+                </small>
+                @if (!string.IsNullOrEmpty(Program.EstimatedTimePerWorkout))
+                {
+                    <small>
+                        <Icon Name="IconName.Clock" Size="IconSize.x4" /> @Program.EstimatedTimePerWorkout
+                    </small>
+                }
+            </div>
 
-    <div class="training-details">
-        <span>@Duration</span>
-        <span>@TotalWorkouts</span>
-    </div>
+            <div @onclick:stopPropagation="true">
+                @if (IsLoading)
+                {
+                    <Button Color="ButtonColor.Secondary" Class="w-100" Disabled="true">
+                        <Spinner Size="SpinnerSize.Small" /> Arbejder...
+                    </Button>
+                }
+                else if (IsEnrolled)
+                {
+                    <Button Color="ButtonColor.Success" Class="w-100" @onclick="NavigateToProgram">
+                        <Icon Name="IconName.Eye" /> Se program
+                    </Button>
+                }
+                else
+                {
+                    <Button Color="ButtonColor.Primary" Class="w-100" @onclick="EnrollInProgram">
+                        Start Program
+                    </Button>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <Alert Color="AlertColor.Danger" Class="mt-2 mb-0">@ErrorMessage</Alert>
+            }
+        </CardBody>
+    </Card>
 </div>
 
 @code {
-    [Parameter] public string Title { get; set; }
-    [Parameter] public string Level { get; set; }
-    [Parameter] public string Description { get; set; }
-    [Parameter] public string Duration { get; set; }
-    [Parameter] public string TotalWorkouts { get; set; }
+    [Parameter]
+    public required TrainingProgramDto Program { get; set; }
 
-    [Inject] NavigationManager Nav { get; set; }
+    [Parameter]
+    public EventCallback OnEnrollmentChanged { get; set; }
+
+    [Parameter]
+    public bool IsEnrolled { get; set; }
+
+    private bool IsLoading { get; set; }
+    private string? ErrorMessage { get; set; }
+
+    private async Task EnrollInProgram()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            var user = await AuthService.GetCurrentUserAsync();
+            if (user == null)
+            {
+                ErrorMessage = "Du skal være logget ind for at tilmelde dig.";
+                IsLoading = false;
+                return;
+            }
+
+            var result = await ExerciseService.EnrollInProgramAsync(new EnrollProgramRequest(user.Id, Program.Id));
+
+            if (result != null)
+            {
+                await OnEnrollmentChanged.InvokeAsync();
+            }
+            else
+            {
+                ErrorMessage = "Kunne ikke tilmelde dig programmet. Du er muligvis allerede tilmeldt.";
+            }
+        }
+        catch
+        {
+            ErrorMessage = "Der opstod en fejl. Prøv igen.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 
     private void NavigateToProgram()
     {
-        var slug = Title.ToLower().Replace(" ", "-");
-        Nav.NavigateTo($"/training/{slug}");
+        NavigationManager.NavigateTo($"/training/{Program.Id}");
     }
 
-    private string GetLevelClass()
+    private BadgeColor GetDifficultyColor()
     {
-        return Level switch
+        return Program.Difficulty?.ToLower() switch
         {
-            "Begynder" => "training-level-begynder",
-            "Mellem" => "training-level-mellem",
-            "Avanceret" => "training-level-avanceret",
-            _ => ""
+            "beginner" or "begynder" => BadgeColor.Success,
+            "intermediate" or "mellem" => BadgeColor.Warning,
+            "advanced" or "avanceret" => BadgeColor.Danger,
+            _ => BadgeColor.Secondary
         };
     }
 }

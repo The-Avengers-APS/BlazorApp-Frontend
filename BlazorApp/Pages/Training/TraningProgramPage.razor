@@ -1,9 +1,331 @@
-@page "/training/{Slug}"
+@page "/training/{Id:guid}"
+@inject IExerciseService ExerciseService
+@inject NavigationManager NavigationManager
 
-    <h3>@Slug</h3>
+<div class="program-detail-page">
+    @if (IsLoading)
+    {
+        <div class="text-center py-5">
+            <Spinner Type="SpinnerType.Border" Color="SpinnerColor.Primary" />
+            <p class="mt-3 text-muted">Henter program...</p>
+        </div>
+    }
+    else if (Program == null)
+    {
+        <Alert Color="AlertColor.Warning">
+            <Icon Name="IconName.ExclamationTriangle" /> Programmet blev ikke fundet.
+        </Alert>
+        <Button Color="ButtonColor.Secondary" @onclick="GoBack">
+            <Icon Name="IconName.ArrowLeft" /> Tilbage
+        </Button>
+    }
+    else
+    {
+        <!-- Back button -->
+        <div class="mb-3">
+            <Button Color="ButtonColor.Light" Size="ButtonSize.Small" @onclick="GoBack">
+                <Icon Name="IconName.ArrowLeft" /> Tilbage
+            </Button>
+        </div>
 
-    <p>Her kommer øvelser, progression osv…</p>
+        <!-- Program Header -->
+        <div class="program-header mb-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <h2 class="mb-1">@Program.Title</h2>
+                <Badge Color="@GetDifficultyColor()" Class="difficulty-badge">@Program.Difficulty</Badge>
+            </div>
+            @if (!string.IsNullOrEmpty(Program.ShortDescription ?? Program.Description))
+            {
+                <p class="text-muted mt-2">@(Program.ShortDescription ?? Program.Description)</p>
+            }
+        </div>
 
-    @code {
-    [Parameter] public string Slug { get; set; }
+        <!-- Program Info -->
+        <div class="info-card mb-4">
+            <div class="info-grid">
+                <div class="info-item">
+                    <Icon Name="IconName.Calendar3" Size="IconSize.x5" />
+                    <span class="info-value">@Program.DurationWeeks</span>
+                    <span class="info-label">uger</span>
+                </div>
+                <div class="info-item">
+                    <Icon Name="IconName.ListCheck" Size="IconSize.x5" />
+                    <span class="info-value">@Program.TotalWorkouts</span>
+                    <span class="info-label">træninger</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Program.EstimatedTimePerWorkout))
+                {
+                    <div class="info-item">
+                        <Icon Name="IconName.Clock" Size="IconSize.x5" />
+                        <span class="info-value">@Program.EstimatedTimePerWorkout</span>
+                        <span class="info-label">per træning</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Goals -->
+        @if (Program.Goals?.Any() == true)
+        {
+            <div class="section-card mb-4">
+                <h5 class="section-title">
+                    <Icon Name="IconName.Bullseye" /> Mål
+                </h5>
+                <ul class="goals-list">
+                    @foreach (var goal in Program.Goals)
+                    {
+                        <li>@goal</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <!-- Guidelines -->
+        @if (Program.GeneralGuidelines != null)
+        {
+            <div class="section-card mb-4">
+                <h5 class="section-title">
+                    <Icon Name="IconName.InfoCircle" /> Retningslinjer
+                </h5>
+                <div class="guidelines-content">
+                    @if (!string.IsNullOrEmpty(Program.GeneralGuidelines.Warmup))
+                    {
+                        <div class="guideline-item">
+                            <strong>Opvarmning:</strong> @Program.GeneralGuidelines.Warmup
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Program.GeneralGuidelines.RestPeriods))
+                    {
+                        <div class="guideline-item">
+                            <strong>Hvileperioder:</strong> @Program.GeneralGuidelines.RestPeriods
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Program.GeneralGuidelines.TechniqueNotes))
+                    {
+                        <div class="guideline-item">
+                            <strong>Teknik:</strong> @Program.GeneralGuidelines.TechniqueNotes
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Program.GeneralGuidelines.Notes))
+                    {
+                        <div class="guideline-item">
+                            <strong>Noter:</strong> @Program.GeneralGuidelines.Notes
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Progression Rules -->
+        @if (Program.ProgressionRules != null)
+        {
+            <div class="section-card mb-4">
+                <h5 class="section-title">
+                    <Icon Name="IconName.GraphUpArrow" /> Progression
+                </h5>
+                <div class="guidelines-content">
+                    @if (!string.IsNullOrEmpty(Program.ProgressionRules.Intensity))
+                    {
+                        <div class="guideline-item">
+                            <strong>Intensitet:</strong> @Program.ProgressionRules.Intensity
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Program.ProgressionRules.DoubleProgression))
+                    {
+                        <div class="guideline-item">
+                            <strong>Dobbelt progression:</strong> @Program.ProgressionRules.DoubleProgression
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Program.ProgressionRules.DeloadInfo))
+                    {
+                        <div class="guideline-item">
+                            <strong>Deload:</strong> @Program.ProgressionRules.DeloadInfo
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Workouts -->
+        <div class="section-card mb-4">
+            <h5 class="section-title">
+                <Icon Name="IconName.Activity" /> Træninger (@Program.Workouts.Count)
+            </h5>
+
+            @if (Program.Workouts.Any())
+            {
+                <div class="workouts-list">
+                    @foreach (var programWorkout in Program.Workouts.OrderBy(w => w.OrderIndex))
+                    {
+                        var workout = Workouts.FirstOrDefault(w => w.Id == programWorkout.WorkoutId);
+                        if (workout != null)
+                        {
+                            <div class="workout-card">
+                                <div class="workout-header" @onclick="() => ToggleWorkout(workout.Id)">
+                                    <div class="workout-info">
+                                        <h6 class="workout-title">@workout.Title</h6>
+                                        @if (!string.IsNullOrEmpty(workout.Focus))
+                                        {
+                                            <Badge Color="BadgeColor.Info" Class="ms-2">@workout.Focus</Badge>
+                                        }
+                                        @if (!string.IsNullOrEmpty(programWorkout.DayOfWeek))
+                                        {
+                                            <span class="text-muted ms-2">(@programWorkout.DayOfWeek)</span>
+                                        }
+                                    </div>
+                                    <div class="workout-toggle">
+                                        <span class="text-muted">@workout.Exercises.Count øvelser</span>
+                                        <Icon Name="@(ExpandedWorkouts.Contains(workout.Id) ? IconName.ChevronUp : IconName.ChevronDown)" />
+                                    </div>
+                                </div>
+
+                                @if (ExpandedWorkouts.Contains(workout.Id))
+                                {
+                                    <div class="workout-exercises">
+                                        @if (!string.IsNullOrEmpty(workout.Description))
+                                        {
+                                            <p class="text-muted small mb-3">@workout.Description</p>
+                                        }
+
+                                        @foreach (var workoutExercise in workout.Exercises.OrderBy(e => e.OrderIndex))
+                                        {
+                                            var exercise = Exercises.FirstOrDefault(e => e.Id == workoutExercise.ExerciseId);
+                                            if (exercise != null)
+                                            {
+                                                <div class="exercise-item">
+                                                    <div class="exercise-header">
+                                                        <span class="exercise-order">@(workoutExercise.OrderIndex + 1).</span>
+                                                        <span class="exercise-name">@exercise.Name</span>
+                                                        @if (!string.IsNullOrEmpty(exercise.MuscleGroup))
+                                                        {
+                                                            <Badge Color="BadgeColor.Secondary" Class="ms-2">@exercise.MuscleGroup</Badge>
+                                                        }
+                                                    </div>
+                                                    <div class="exercise-details">
+                                                        <span class="detail-item">
+                                                            <strong>@workoutExercise.DefaultSets</strong> sæt
+                                                        </span>
+                                                        @if (!string.IsNullOrEmpty(workoutExercise.DefaultReps ?? exercise.DefaultReps))
+                                                        {
+                                                            <span class="detail-item">
+                                                                <strong>@(workoutExercise.DefaultReps ?? exercise.DefaultReps)</strong> reps
+                                                            </span>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(workoutExercise.RirTarget ?? exercise.RirTarget))
+                                                        {
+                                                            <span class="detail-item rir">
+                                                                RIR: <strong>@(workoutExercise.RirTarget ?? exercise.RirTarget)</strong>
+                                                            </span>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(workoutExercise.Tempo ?? exercise.Tempo))
+                                                        {
+                                                            <span class="detail-item tempo">
+                                                                Tempo: <strong>@(workoutExercise.Tempo ?? exercise.Tempo)</strong>
+                                                            </span>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(workoutExercise.RestSeconds ?? exercise.RestSeconds))
+                                                        {
+                                                            <span class="detail-item">
+                                                                Hvile: <strong>@(workoutExercise.RestSeconds ?? exercise.RestSeconds)</strong>
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                    @if (!string.IsNullOrEmpty(workoutExercise.Notes ?? exercise.Notes))
+                                                    {
+                                                        <div class="exercise-notes">
+                                                            <Icon Name="IconName.ChatLeftText" /> @(workoutExercise.Notes ?? exercise.Notes)
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            else
+            {
+                <Alert Color="AlertColor.Info" Class="mb-0">
+                    Ingen træninger tilføjet endnu.
+                </Alert>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private TrainingProgramDto? Program { get; set; }
+    private List<WorkoutDto> Workouts { get; set; } = new();
+    private List<ExerciseDto> Exercises { get; set; } = new();
+    private HashSet<Guid> ExpandedWorkouts { get; set; } = new();
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        try
+        {
+            Program = await ExerciseService.GetTrainingProgramByIdAsync(Id);
+
+            if (Program != null)
+            {
+                Workouts = await ExerciseService.GetAllWorkoutsAsync();
+                Exercises = await ExerciseService.GetAllExercisesAsync();
+
+                // Auto-expand first workout
+                if (Program.Workouts.Any())
+                {
+                    var firstWorkout = Program.Workouts.OrderBy(w => w.OrderIndex).First();
+                    ExpandedWorkouts.Add(firstWorkout.WorkoutId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading program: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void ToggleWorkout(Guid workoutId)
+    {
+        if (ExpandedWorkouts.Contains(workoutId))
+        {
+            ExpandedWorkouts.Remove(workoutId);
+        }
+        else
+        {
+            ExpandedWorkouts.Add(workoutId);
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/trainingpage");
+    }
+
+    private BadgeColor GetDifficultyColor()
+    {
+        return Program?.Difficulty?.ToLower() switch
+        {
+            "beginner" or "begynder" => BadgeColor.Success,
+            "intermediate" or "mellem" => BadgeColor.Warning,
+            "advanced" or "avanceret" => BadgeColor.Danger,
+            _ => BadgeColor.Secondary
+        };
+    }
 }

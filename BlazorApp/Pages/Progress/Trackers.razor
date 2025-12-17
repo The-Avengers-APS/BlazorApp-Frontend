@@ -8,7 +8,7 @@
                 </CardBody>
             </Card>
         </div>
-        <div class="col-6">
+        <div class="col-@(CurrentWeight.HasValue ? "4" : "6")">
             <Card>
                 <CardBody Class="text-center">
                     <h2 class="mb-1">@TotalWorkouts</h2>
@@ -16,7 +16,7 @@
                 </CardBody>
             </Card>
         </div>
-        <div class="col-6">
+        <div class="col-@(CurrentWeight.HasValue ? "4" : "6")">
             <Card>
                 <CardBody Class="text-center">
                     <h2 class="mb-1">@CurrentStreak</h2>
@@ -24,16 +24,30 @@
                 </CardBody>
             </Card>
         </div>
+        @if (CurrentWeight.HasValue)
+        {
+            <div class="col-4">
+                <Card>
+                    <CardBody Class="text-center">
+                        <h2 class="mb-1">@CurrentWeight.Value.ToString("F1")</h2>
+                        <small class="text-muted">kg</small>
+                    </CardBody>
+                </Card>
+            </div>
+        }
     </div>
 </div>
 
 @code {
     [Parameter]
-    public int WorkoutsThisWeek { get; set; } = 5;
+    public int WorkoutsThisWeek { get; set; }
 
     [Parameter]
-    public int TotalWorkouts { get; set; } = 127;
+    public int TotalWorkouts { get; set; }
 
     [Parameter]
-    public int CurrentStreak { get; set; } = 12;
+    public int CurrentStreak { get; set; }
+
+    [Parameter]
+    public decimal? CurrentWeight { get; set; }
 }

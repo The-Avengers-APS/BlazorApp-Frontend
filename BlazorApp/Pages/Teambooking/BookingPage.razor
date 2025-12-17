@@ -1,44 +1,241 @@
 @page "/bookingpage"
+@inject IBookingService BookingService
+@inject IAuthService AuthService
+@attribute [Authorize]
 
 <div class="container py-4">
-    <h1>Hold</h1>
-    <h5 class="text-muted mb-4">Book dine klasser</h5>
-
-    <div class="booking-cards">
-        <BookingCard
-            Title="HIIT Cardio"
-            Instructor="Sarah Hansen"
-            DateTime="I dag 18:00"
-            Duration="45 min"
-            SpotsAvailable="5/20 ledige"
-            Location="Sal 1" />
-
-        <BookingCard
-            Title="Yoga Flow"
-            Instructor="Maria Petersen"
-            DateTime="I morgen 07:00"
-            Duration="60 min"
-            SpotsAvailable="12/15 ledige"
-            Location="Sal 2" />
-
-        <BookingCard
-            Title="Spinning"
-            Instructor="Lars Nielsen"
-            DateTime="I morgen 17:30"
-            Duration="45 min"
-            SpotsAvailable="3/25 ledige"
-            Location="Sal 3" />
-
-        <BookingCard
-            Title="CrossFit"
-            Instructor="Thomas Andersen"
-            DateTime="Onsdag 19:00"
-            Duration="60 min"
-            SpotsAvailable="8/15 ledige"
-            Location="Sal 1" />
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Hold</h1>
+            <h5 class="text-muted mb-0">Book dine klasser</h5>
+        </div>
+        @if (IsAdmin)
+        {
+            <Button Color="ButtonColor.Primary" @onclick="() => ShowCreateModal = true">
+                <Icon Name="IconName.PlusLg" /> Opret Hold
+            </Button>
+        }
     </div>
+
+    @if (IsLoading)
+    {
+        <div class="text-center py-5">
+            <Spinner Type="SpinnerType.Border" Color="SpinnerColor.Primary" />
+            <p class="mt-2">Henter hold...</p>
+        </div>
+    }
+    else if (ErrorMessage != null)
+    {
+        <Alert Color="AlertColor.Danger">
+            <Icon Name="IconName.ExclamationTriangle" /> @ErrorMessage
+            <Button Color="ButtonColor.Link" @onclick="LoadBookings">Prøv igen</Button>
+        </Alert>
+    }
+    else if (!Bookings.Any())
+    {
+        <Alert Color="AlertColor.Info">
+            <Icon Name="IconName.InfoCircle" /> Der er ingen hold tilgængelige i øjeblikket.
+        </Alert>
+    }
+    else
+    {
+        <div class="booking-cards">
+            @foreach (var booking in Bookings)
+            {
+                <BookingCard
+                    Booking="booking"
+                    IsAdmin="IsAdmin"
+                    OnBookingChanged="LoadBookings" />
+            }
+        </div>
+    }
 </div>
 
-@code {
+@if (ShowCreateModal)
+{
+    <Modal @ref="CreateModal" Title="Opret nyt hold" IsVerticallyCentered="true">
+        <BodyTemplate>
+            <div class="mb-3">
+                <label class="form-label">Navn</label>
+                <input type="text" class="form-control" @bind="NewBooking.Name" placeholder="f.eks. Morning Yoga" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Genre</label>
+                <input type="text" class="form-control" @bind="NewBooking.Genre" placeholder="f.eks. Yoga, HIIT, Spinning" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Center</label>
+                <input type="text" class="form-control" @bind="NewBooking.CenterName" placeholder="f.eks. FitLife Downtown" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Kapacitet</label>
+                <input type="number" class="form-control" @bind="NewBooking.Capacity" min="1" />
+            </div>
+            <div class="row">
+                <div class="col-6 mb-3">
+                    <label class="form-label">Start tid</label>
+                    <input type="datetime-local" class="form-control" @bind="NewBooking.TimeStart" />
+                </div>
+                <div class="col-6 mb-3">
+                    <label class="form-label">Slut tid</label>
+                    <input type="datetime-local" class="form-control" @bind="NewBooking.TimeEnd" />
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(CreateErrorMessage))
+            {
+                <Alert Color="AlertColor.Danger">@CreateErrorMessage</Alert>
+            }
+        </BodyTemplate>
+        <FooterTemplate>
+            <Button Color="ButtonColor.Secondary" @onclick="CloseCreateModal">Annuller</Button>
+            <Button Color="ButtonColor.Primary" @onclick="CreateBooking" Disabled="IsCreating">
+                @if (IsCreating)
+                {
+                    <Spinner Size="SpinnerSize.Small" />
+                    <span> Opretter...</span>
+                }
+                else
+                {
+                    <span>Opret Hold</span>
+                }
+            </Button>
+        </FooterTemplate>
+    </Modal>
+}
 
+@code {
+    private List<BookingDto> Bookings { get; set; } = new();
+    private bool IsLoading { get; set; } = true;
+    private bool IsAdmin { get; set; }
+    private string? ErrorMessage { get; set; }
+
+    // Create modal state
+    private bool ShowCreateModal { get; set; }
+    private Modal? CreateModal { get; set; }
+    private bool IsCreating { get; set; }
+    private string? CreateErrorMessage { get; set; }
+    private CreateBookingModel NewBooking { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var role = await AuthService.GetCurrentRoleAsync();
+        IsAdmin = role is "Admin" or "Manager";
+
+        await LoadBookings();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShowCreateModal && CreateModal != null)
+        {
+            await CreateModal.ShowAsync();
+        }
+    }
+
+    private async Task LoadBookings()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            Bookings = await BookingService.GetAllBookingsAsync();
+
+            // Filter out past bookings and sort by start time
+            Bookings = Bookings
+                .Where(b => b.TimeEnd > DateTime.UtcNow)
+                .OrderBy(b => b.TimeStart)
+                .ToList();
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Kunne ikke hente hold. Tjek din internetforbindelse.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task CreateBooking()
+    {
+        CreateErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(NewBooking.Name))
+        {
+            CreateErrorMessage = "Navn er påkrævet.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(NewBooking.Genre))
+        {
+            CreateErrorMessage = "Genre er påkrævet.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(NewBooking.CenterName))
+        {
+            CreateErrorMessage = "Center er påkrævet.";
+            return;
+        }
+        if (NewBooking.Capacity < 1)
+        {
+            CreateErrorMessage = "Kapacitet skal være mindst 1.";
+            return;
+        }
+        if (NewBooking.TimeStart == null || NewBooking.TimeEnd == null)
+        {
+            CreateErrorMessage = "Start og slut tid er påkrævet.";
+            return;
+        }
+        if (NewBooking.TimeStart >= NewBooking.TimeEnd)
+        {
+            CreateErrorMessage = "Start tid skal være før slut tid.";
+            return;
+        }
+
+        IsCreating = true;
+
+        var createDto = new BookingCreateDto(
+            NewBooking.Name,
+            NewBooking.Genre,
+            NewBooking.CenterName,
+            NewBooking.Capacity,
+            NewBooking.TimeStart,
+            NewBooking.TimeEnd
+        );
+
+        var result = await BookingService.CreateBookingAsync(createDto);
+
+        if (result != null)
+        {
+            await CloseCreateModal();
+            NewBooking = new CreateBookingModel();
+            await LoadBookings();
+        }
+        else
+        {
+            CreateErrorMessage = "Kunne ikke oprette holdet. Prøv igen.";
+        }
+
+        IsCreating = false;
+    }
+
+    private async Task CloseCreateModal()
+    {
+        if (CreateModal != null)
+        {
+            await CreateModal.HideAsync();
+        }
+        ShowCreateModal = false;
+        CreateErrorMessage = null;
+    }
+
+    private class CreateBookingModel
+    {
+        public string Name { get; set; } = "";
+        public string Genre { get; set; } = "";
+        public string CenterName { get; set; } = "";
+        public int Capacity { get; set; } = 20;
+        public DateTime? TimeStart { get; set; } = DateTime.Now.AddHours(1);
+        public DateTime? TimeEnd { get; set; } = DateTime.Now.AddHours(2);
+    }
 }

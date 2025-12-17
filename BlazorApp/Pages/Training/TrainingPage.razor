@@ -1,33 +1,87 @@
 @page "/trainingpage"
+@inject IExerciseService ExerciseService
+@inject IAuthService AuthService
+@attribute [Authorize]
 
 <div class="container py-4">
     <h3>Træningsprogrammer</h3>
     <h4 class="text-muted mb-4">Vælg dit næste program</h4>
 
-    <div class="training-cards">
-        <TraningCard
-            Title="Begynder Styrketræning"
-            Level="Begynder"
-            Description="Perfekt til at komme i gang med styrketræning"
-            Duration="4 uger"
-            TotalWorkouts="12 træninger" />
+    @if (IsLoading)
+    {
+        <div class="text-center py-5">
+            <Spinner Type="SpinnerType.Border" />
+            <p class="mt-2 text-muted">Henter programmer...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <Alert Color="AlertColor.Danger">@ErrorMessage</Alert>
+    }
+    else if (!Programs.Any())
+    {
+        <Alert Color="AlertColor.Info">Ingen træningsprogrammer fundet. Seed databasen via Postman.</Alert>
+    }
+    else
+    {
+        @if (EnrolledProgramIds.Any())
+        {
+            <h5 class="mb-3">Mine programmer</h5>
+            <div class="training-cards mb-4">
+                @foreach (var program in Programs.Where(p => EnrolledProgramIds.Contains(p.Id)))
+                {
+                    <TraningCard Program="program" IsEnrolled="true" OnEnrollmentChanged="LoadData" />
+                }
+            </div>
 
-        <TraningCard
-            Title="Avanceret Muskelopbygning"
-            Level="Avanceret"
-            Description="Intensivt program for maksimal muskelopbygning"
-            Duration="8 uger"
-            TotalWorkouts="32 træninger" />
+            <h5 class="mb-3">Alle programmer</h5>
+        }
 
-        <TraningCard
-            Title="Konditionstræning"
-            Level="Mellem"
-            Description="Forbedr din kondition og udholdenhed"
-            Duration="6 uger"
-            TotalWorkouts="18 træninger" />
-    </div>
+        <div class="training-cards">
+            @foreach (var program in Programs.Where(p => !EnrolledProgramIds.Contains(p.Id)))
+            {
+                <TraningCard Program="program" IsEnrolled="false" OnEnrollmentChanged="LoadData" />
+            }
+        </div>
+    }
 </div>
 
 @code {
+    private List<TrainingProgramDto> Programs { get; set; } = [];
+    private HashSet<Guid> EnrolledProgramIds { get; set; } = [];
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
 
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            // Load all programs
+            Programs = await ExerciseService.GetAllTrainingProgramsAsync();
+
+            // Load user enrollments
+            var user = await AuthService.GetCurrentUserAsync();
+            if (user != null)
+            {
+                var userPrograms = await ExerciseService.GetUserProgramsAsync(user.Id);
+                EnrolledProgramIds = userPrograms.Select(up => up.ProgramId).ToHashSet();
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage = "Kunne ikke hente træningsprogrammer. Prøv igen senere.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 }

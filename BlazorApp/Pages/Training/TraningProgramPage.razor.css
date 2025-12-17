@@ -1,0 +1,219 @@
+.program-detail-page {
+    padding: 16px;
+    padding-bottom: 100px;
+}
+
+/* Header */
+.program-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.difficulty-badge {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: 12px;
+}
+
+/* Info Card */
+.info-card {
+    background: linear-gradient(135deg, #ffffff, #f5f5f7);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.info-grid {
+    display: flex;
+    justify-content: space-around;
+    gap: 16px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+}
+
+.info-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Section Cards */
+.section-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f0f0f0;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Goals */
+.goals-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.goals-list li {
+    color: #4a4a4a;
+    padding: 4px 0;
+}
+
+/* Guidelines */
+.guidelines-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.guideline-item {
+    font-size: 0.95rem;
+    color: #4a4a4a;
+    line-height: 1.5;
+}
+
+.guideline-item strong {
+    color: #1a1a1a;
+}
+
+/* Workouts */
+.workouts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.workout-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+
+.workout-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.workout-header:hover {
+    background-color: #f0f1f2;
+}
+
+.workout-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.workout-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: #1a1a1a;
+}
+
+.workout-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+}
+
+/* Exercises */
+.workout-exercises {
+    padding: 0 16px 16px 16px;
+    border-top: 1px solid #e9ecef;
+    background: #ffffff;
+}
+
+.exercise-item {
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.exercise-item:last-child {
+    border-bottom: none;
+}
+
+.exercise-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.exercise-order {
+    font-weight: 600;
+    color: #6c757d;
+    min-width: 24px;
+}
+
+.exercise-name {
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.exercise-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: #4a4a4a;
+    padding-left: 24px;
+}
+
+.detail-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.detail-item.rir {
+    color: #0d6efd;
+}
+
+.detail-item.tempo {
+    color: #198754;
+}
+
+.exercise-notes {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-style: italic;
+    padding-left: 24px;
+    margin-top: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+/* Card wrapper for training cards */
+::deep .training-card-wrapper {
+    cursor: pointer;
+}

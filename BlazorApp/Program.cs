@@ -3,6 +3,11 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.AspNetCore.Components.Authorization;
 using BlazorApp;
 using BlazorApp.Services.Auth;
+using BlazorApp.Services.Booking;
+using BlazorApp.Services.Exercise;
+using BlazorApp.Services.Stats;
+using BlazorApp.Services.Social;
+using BlazorApp.Services.User;
 using BlazorBootstrap;
 using Blazored.LocalStorage;
 
@@ -24,6 +29,21 @@ builder.Services.AddScoped<ITokenStorageService, TokenStorageService>();
 builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<TokenRefreshService>();
+
+// Register booking service
+builder.Services.AddScoped<IBookingService, BookingService>();
+
+// Register exercise service
+builder.Services.AddScoped<IExerciseService, ExerciseService>();
+
+// Register stats service
+builder.Services.AddScoped<IStatsService, StatsService>();
+
+// Register social service
+builder.Services.AddScoped<ISocialService, SocialService>();
+
+// Register user service
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Register the authorization message handler
 builder.Services.AddScoped<AuthorizationMessageHandler>();

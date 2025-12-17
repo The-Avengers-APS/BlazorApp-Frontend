@@ -1,6 +1,8 @@
 @page "/profile"
 @attribute [Authorize]
 @inject IAuthService AuthService
+@inject IStatsService StatsService
+@inject IUserService UserService
 @inject NavigationManager Navigation
 
 <div class="profile-container">
@@ -55,6 +57,56 @@
             </div>
         </div>
 
+        <!-- Body Metrics Card -->
+        @if (_metrics != null && (_metrics.WeightKg.HasValue || _metrics.HeightCm.HasValue))
+        {
+            <div class="profile-card mb-4">
+                <h4 class="settings-title">Kropsmål</h4>
+                <div class="stats-grid">
+                    @if (_metrics.WeightKg.HasValue)
+                    {
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-info">
+                                <Icon Name="IconName.Speedometer" Size="IconSize.x3" />
+                            </div>
+                            <h3 class="stat-value">@_metrics.WeightKg.Value.ToString("F1")</h3>
+                            <p class="stat-label">kg</p>
+                        </div>
+                    }
+                    @if (_metrics.HeightCm.HasValue)
+                    {
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-secondary">
+                                <Icon Name="IconName.ArrowsExpand" Size="IconSize.x3" />
+                            </div>
+                            <h3 class="stat-value">@_metrics.HeightCm.Value.ToString("F0")</h3>
+                            <p class="stat-label">cm</p>
+                        </div>
+                    }
+                    @if (_metrics.BmiValue.HasValue)
+                    {
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-primary">
+                                <Icon Name="IconName.Activity" Size="IconSize.x3" />
+                            </div>
+                            <h3 class="stat-value">@_metrics.BmiValue.Value.ToString("F1")</h3>
+                            <p class="stat-label">BMI (@(_metrics.BmiCategory ?? ""))</p>
+                        </div>
+                    }
+                    @if (_metrics.AgeYears.HasValue)
+                    {
+                        <div class="stat-card">
+                            <div class="stat-icon stat-icon-warning">
+                                <Icon Name="IconName.Calendar3" Size="IconSize.x3" />
+                            </div>
+                            <h3 class="stat-value">@_metrics.AgeYears.Value</h3>
+                            <p class="stat-label">år</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
         <!-- Settings Card -->
         <div class="settings-card">
             <h4 class="settings-title">Konto Indstillinger</h4>
@@ -104,20 +156,26 @@
     private UserDto? _user;
     private string? _userRole;
     private bool _isLoading = true;
+    private UserStatisticsDto? _statistics;
+    private UserMetricsDto? _metrics;
 
-    // Stats - will come from StatsService API later
-    private int totalWorkouts = 0;
-    private int currentStreak = 0;
-    private int totalHours = 0;
-    private int achievements = 0;
+    private int totalWorkouts => _statistics?.Training.TotalSessions ?? 0;
+    private int currentStreak => _statistics?.TotalCheckIns ?? 0;
+    private int totalHours => (_statistics?.Training.TotalMinutes ?? 0) / 60;
+    private int achievements => _statistics?.AchievementIds.Count ?? 0;
 
     protected override async Task OnInitializedAsync()
     {
         _user = await AuthService.GetCurrentUserAsync();
         _userRole = await AuthService.GetCurrentRoleAsync();
-        _isLoading = false;
 
-        // TODO: Load stats from StatsService API
+        var statsTask = StatsService.GetMyStatisticsAsync();
+        var metricsTask = UserService.GetMyMetricsAsync();
+        await Task.WhenAll(statsTask, metricsTask);
+
+        _statistics = statsTask.Result;
+        _metrics = metricsTask.Result;
+        _isLoading = false;
     }
 
     private string DisplayName => _user switch

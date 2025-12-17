@@ -1,15 +1,21 @@
 <Card Class="mb-3">
     <CardBody>
-        <h5 class="card-title mb-3">@Title</h5>
+        <h5 class="card-title mb-3">@Exercise.Name</h5>
         <div class="d-flex gap-2 flex-wrap">
-            <Badge Color="BadgeColor.Primary">
-                <Icon Name="IconName.PersonArmsUp" Size="IconSize.x4" /> @MuscleGroup
-            </Badge>
-            <Badge Color="BadgeColor.Info">
-                <Icon Name="IconName.Tools" Size="IconSize.x4" /> @Equipment
-            </Badge>
-            <Badge Color="@GetDifficultyBadgeColor()">
-                <Icon Name="IconName.BarChart" Size="IconSize.x4" /> @Difficulty
+            @if (!string.IsNullOrEmpty(Exercise.MuscleGroup))
+            {
+                <Badge Color="BadgeColor.Primary">
+                    <Icon Name="IconName.PersonArmsUp" Size="IconSize.x4" /> @Exercise.MuscleGroup
+                </Badge>
+            }
+            @if (Exercise.Equipment?.Any() == true)
+            {
+                <Badge Color="BadgeColor.Info">
+                    <Icon Name="IconName.Tools" Size="IconSize.x4" /> @string.Join(", ", Exercise.Equipment)
+                </Badge>
+            }
+            <Badge Color="BadgeColor.Secondary">
+                <Icon Name="IconName.ListOl" Size="IconSize.x4" /> @Exercise.DefaultSets x @(Exercise.DefaultReps ?? "10")
             </Badge>
         </div>
     </CardBody>
@@ -17,25 +23,5 @@
 
 @code {
     [Parameter]
-    public string Title { get; set; } = string.Empty;
-
-    [Parameter]
-    public string MuscleGroup { get; set; } = string.Empty;
-
-    [Parameter]
-    public string Equipment { get; set; } = string.Empty;
-
-    [Parameter]
-    public string Difficulty { get; set; } = string.Empty;
-
-    private BadgeColor GetDifficultyBadgeColor()
-    {
-        return Difficulty switch
-        {
-            "Begynder" => BadgeColor.Success,
-            "Mellem" => BadgeColor.Warning,
-            "Avanceret" => BadgeColor.Danger,
-            _ => BadgeColor.Secondary
-        };
-    }
+    public required ExerciseDto Exercise { get; set; }
 }
