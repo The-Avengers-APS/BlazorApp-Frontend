@@ -12,18 +12,30 @@ jobs:
         with:
           submodules: true
 
-      - name: Setup .NET
+      - name: Setup .NET 10 Preview
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
           dotnet-quality: 'preview'
 
-      - name: Build and Deploy
-        id: builddeploy
+      - name: Setup GitHub Packages NuGet source
+        run: |
+          dotnet nuget add source "https://nuget.pkg.github.com/The-Avengers-APS/index.json" \
+            --name "github" \
+            --username "github-actions" \
+            --password "${{ secrets.NUGET_AUTH_TOKEN }}" \
+            --store-password-in-clear-text
+
+      - name: Restore dependencies
+        run: dotnet restore BlazorApp/BlazorApp.csproj
+
+      - name: Build and Publish
+        run: dotnet publish BlazorApp/BlazorApp.csproj -c Release -o output
+
+      - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          app_location: "/BlazorApp"
-          output_location: "wwwroot"
-          app_build_command: "dotnet publish -c Release -o output"
+          skip_app_build: true
+          app_location: "output/wwwroot"
