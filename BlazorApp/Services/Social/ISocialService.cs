@@ -2,10 +2,11 @@ namespace BlazorApp.Services.Social;
 
 public interface ISocialService
 {
-    // Profile & Streak
-    Task<UserProfileDto?> GetUserProfileAsync(Guid userId);
-    Task<StreakDto?> GetUserStreakAsync(Guid userId);
+    // Search
     Task<List<UserProfileDto>> SearchUsersAsync(string query);
+
+    // All Users
+    Task<PagedUsersDto> GetAllUsersAsync(int page = 1, int pageSize = 10);
 
     // Friends
     Task<List<UserProfileDto>> GetFriendsAsync(Guid userId);

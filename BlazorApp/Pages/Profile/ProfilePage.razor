@@ -58,11 +58,17 @@
         </div>
 
         <!-- Body Metrics Card -->
-        @if (_metrics != null && (_metrics.WeightKg.HasValue || _metrics.HeightCm.HasValue))
-        {
-            <div class="profile-card mb-4">
+        <div class="profile-card mb-4">
+            <div class="metrics-header">
                 <h4 class="settings-title">Kropsmål</h4>
-                <div class="stats-grid">
+                <button class="btn-edit-metrics" @onclick="OpenMetricsModal">
+                    <Icon Name="IconName.PencilSquare" />
+                    <span>Rediger</span>
+                </button>
+            </div>
+            @if (_metrics != null && (_metrics.WeightKg.HasValue || _metrics.HeightCm.HasValue))
+            {
+                <div class="stats-grid metrics-grid">
                     @if (_metrics.WeightKg.HasValue)
                     {
                         <div class="stat-card">
@@ -104,8 +110,16 @@
                         </div>
                     }
                 </div>
-            </div>
-        }
+            }
+            else
+            {
+                <div class="empty-metrics">
+                    <Icon Name="IconName.HeartPulse" Size="IconSize.x4" />
+                    <p>Ingen kropsmål tilføjet endnu</p>
+                    <span>Tilføj dine mål for at tracke din fremgang</span>
+                </div>
+            }
+        </div>
 
         <!-- Settings Card -->
         <div class="settings-card">
@@ -152,12 +166,108 @@
     </div>
 </div>
 
+<!-- Metrics Edit Modal -->
+@if (_showMetricsModal)
+{
+    <div class="modal-overlay" @onclick="CloseMetricsModal">
+        <div class="modal-content metrics-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h4>Rediger Kropsmål</h4>
+                <button class="modal-close" @onclick="CloseMetricsModal">
+                    <Icon Name="IconName.X" />
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <p class="modal-description">Disse oplysninger er valgfrie og bruges til at beregne BMI og personlige anbefalinger.</p>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="weight">Vægt (kg)</label>
+                        <input type="number" id="weight" step="0.1" min="30" max="300"
+                               @bind="_editWeight" placeholder="f.eks. 75.5" />
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Højde (cm)</label>
+                        <input type="number" id="height" step="1" min="100" max="250"
+                               @bind="_editHeight" placeholder="f.eks. 180" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="dob">Fødselsdato</label>
+                    <input type="date" id="dob" @bind="_editDateOfBirth" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">Køn</label>
+                    <select id="gender" @bind="_editGender">
+                        <option value="0">Ikke angivet</option>
+                        <option value="1">Mand</option>
+                        <option value="2">Kvinde</option>
+                        <option value="3">Andet</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="goal">Fitnessmål</label>
+                    <select id="goal" @bind="_editFitnessGoal">
+                        <option value="0">Ikke angivet</option>
+                        <option value="1">Tab vægt</option>
+                        <option value="2">Byg muskler</option>
+                        <option value="3">Forbedre udholdenhed</option>
+                        <option value="4">Vedligehold fitness</option>
+                        <option value="5">Øg fleksibilitet</option>
+                        <option value="6">Generel sundhed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="activity">Aktivitetsniveau</label>
+                    <select id="activity" @bind="_editActivityLevel">
+                        <option value="0">Ikke angivet</option>
+                        <option value="1">Stillesiddende</option>
+                        <option value="2">Let aktiv</option>
+                        <option value="3">Moderat aktiv</option>
+                        <option value="4">Meget aktiv</option>
+                        <option value="5">Ekstremt aktiv</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" @onclick="CloseMetricsModal">Annuller</button>
+                <button class="btn-save" @onclick="SaveMetrics" disabled="@_isSaving">
+                    @if (_isSaving)
+                    {
+                        <Spinner Type="SpinnerType.Border" Size="SpinnerSize.Small" />
+                    }
+                    else
+                    {
+                        <span>Gem ændringer</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private UserDto? _user;
     private string? _userRole;
     private bool _isLoading = true;
     private UserStatisticsDto? _statistics;
     private UserMetricsDto? _metrics;
+
+    // Metrics modal state
+    private bool _showMetricsModal = false;
+    private bool _isSaving = false;
+    private decimal? _editWeight;
+    private decimal? _editHeight;
+    private DateTime? _editDateOfBirth;
+    private int _editGender = 0;
+    private int _editFitnessGoal = 0;
+    private int _editActivityLevel = 0;
 
     private int totalWorkouts => _statistics?.Training.TotalSessions ?? 0;
     private int currentStreak => _statistics?.TotalCheckIns ?? 0;
@@ -203,5 +313,48 @@
     {
         await AuthService.LogoutAsync();
         Navigation.NavigateTo("/login", forceLoad: true);
+    }
+
+    private void OpenMetricsModal()
+    {
+        // Pre-populate form with existing values
+        _editWeight = _metrics?.WeightKg;
+        _editHeight = _metrics?.HeightCm;
+        _editDateOfBirth = _metrics?.DateOfBirth?.ToDateTime(TimeOnly.MinValue);
+        _editGender = (int?)_metrics?.Gender ?? 0;
+        _editFitnessGoal = (int?)_metrics?.FitnessGoal ?? 0;
+        _editActivityLevel = (int?)_metrics?.ActivityLevel ?? 0;
+        _showMetricsModal = true;
+    }
+
+    private void CloseMetricsModal()
+    {
+        _showMetricsModal = false;
+    }
+
+    private async Task SaveMetrics()
+    {
+        _isSaving = true;
+        StateHasChanged();
+
+        var request = new UpdateBodyMetricsRequest(
+            WeightKg: _editWeight,
+            HeightCm: _editHeight,
+            DateOfBirth: _editDateOfBirth.HasValue ? DateOnly.FromDateTime(_editDateOfBirth.Value) : null,
+            Gender: _editGender > 0 ? _editGender : null,
+            FitnessGoal: _editFitnessGoal > 0 ? _editFitnessGoal : null,
+            ActivityLevel: _editActivityLevel > 0 ? _editActivityLevel : null
+        );
+
+        var success = await UserService.UpdateMyMetricsAsync(request);
+
+        if (success)
+        {
+            // Refresh metrics data
+            _metrics = await UserService.GetMyMetricsAsync();
+            CloseMetricsModal();
+        }
+
+        _isSaving = false;
     }
 }

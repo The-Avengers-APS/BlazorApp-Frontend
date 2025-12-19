@@ -1,0 +1,51 @@
+/* Achievement Gallery Styles */
+.achievement-card {
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.achievement-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.achievement-locked {
+    opacity: 0.6;
+}
+
+.achievement-locked .achievement-icon {
+    filter: grayscale(100%);
+}
+
+.achievement-icon {
+    line-height: 1;
+}
+
+.achievement-progress {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+::deep .achievement-progress .progress-bar {
+    border-radius: 3px;
+}
+
+.achievement-title {
+    line-height: 1.2;
+    min-height: 2.4em;
+}
+
+.achievement-description {
+    line-height: 1.3;
+    min-height: 2.6em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.achievement-category h6 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}

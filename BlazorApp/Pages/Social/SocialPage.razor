@@ -1,0 +1,548 @@
+@page "/social"
+@attribute [Authorize]
+@implements IDisposable
+@inject ISocialService SocialService
+@inject IAuthService AuthService
+
+<div class="social-container">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="social-header mb-4">
+            <h2 class="social-title">Socialt</h2>
+            <p class="social-subtitle">Dit sociale netværk</p>
+        </div>
+
+        @if (_isLoading)
+        {
+            <div class="text-center py-5">
+                <Spinner Type="SpinnerType.Border" />
+                <p class="mt-2 text-muted">Henter data...</p>
+            </div>
+        }
+        else
+        {
+            <!-- Friends at Gym Section -->
+            @if (_friendsAtGym.Any())
+            {
+                <div class="social-card mb-4">
+                    <div class="card-header-row">
+                        <h4 class="card-title">
+                            <Icon Name="IconName.BuildingFill" class="me-2" />
+                            I Centret Nu
+                        </h4>
+                        <Badge Color="BadgeColor.Success">@_friendsAtGym.Count aktive</Badge>
+                    </div>
+                    <div class="friends-at-gym-list">
+                        @foreach (var friend in _friendsAtGym)
+                        {
+                            <div class="friend-at-gym-item">
+                                <div class="friend-avatar">
+                                    <Icon Name="IconName.PersonCircle" Size="IconSize.x3" />
+                                    <span class="online-indicator"></span>
+                                </div>
+                                <div class="friend-info">
+                                    <span class="friend-name">@friend.Email</span>
+                                    <span class="friend-status">Tjekket ind</span>
+                                </div>
+                                <div class="friend-streak">
+                                    <Icon Name="IconName.Fire" class="streak-icon" />
+                                    <span>@friend.CurrentStreak</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Pending Friend Requests Section -->
+            @if (_pendingRequests.Any())
+            {
+                <div class="social-card mb-4">
+                    <div class="card-header-row">
+                        <h4 class="card-title">
+                            <Icon Name="IconName.PersonPlusFill" class="me-2" />
+                            Ventende Anmodninger
+                        </h4>
+                        <Badge Color="BadgeColor.Warning">@_pendingRequests.Count nye</Badge>
+                    </div>
+                    <div class="requests-list">
+                        @foreach (var request in _pendingRequests)
+                        {
+                            <div class="request-item">
+                                <div class="request-avatar">
+                                    <Icon Name="IconName.PersonCircle" Size="IconSize.x3" />
+                                </div>
+                                <div class="request-info">
+                                    <span class="request-name">@request.SenderEmail</span>
+                                    <span class="request-time">@FormatTimeAgo(request.CreatedAt)</span>
+                                </div>
+                                <div class="request-actions">
+                                    <button class="btn-accept" @onclick="() => AcceptRequest(request.Id)" disabled="@_processingRequestId.Contains(request.Id)">
+                                        @if (_processingRequestId.Contains(request.Id))
+                                        {
+                                            <Spinner Type="SpinnerType.Border" Size="SpinnerSize.Small" />
+                                        }
+                                        else
+                                        {
+                                            <Icon Name="IconName.Check2" />
+                                        }
+                                    </button>
+                                    <button class="btn-reject" @onclick="() => RejectRequest(request.Id)" disabled="@_processingRequestId.Contains(request.Id)">
+                                        <Icon Name="IconName.X" />
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Find Friends Section -->
+            <div class="social-card mb-4">
+                <h4 class="card-title">
+                    <Icon Name="IconName.Search" class="me-2" />
+                    Find Venner
+                </h4>
+                <div class="search-container">
+                    <input type="text"
+                           class="search-input"
+                           placeholder="Søg efter brugere..."
+                           @bind="_searchQuery"
+                           @bind:event="oninput"
+                           @onkeyup="OnSearchInput" />
+                    @if (_isSearching)
+                    {
+                        <Spinner Type="SpinnerType.Border" Size="SpinnerSize.Small" class="search-spinner" />
+                    }
+                </div>
+
+                @if (_searchResults.Any())
+                {
+                    <div class="search-results">
+                        @foreach (var user in _searchResults)
+                        {
+                            <div class="search-result-item">
+                                <div class="result-avatar">
+                                    <Icon Name="IconName.PersonCircle" Size="IconSize.x3" />
+                                </div>
+                                <div class="result-info">
+                                    <span class="result-name">@user.Email</span>
+                                    <span class="result-stats">
+                                        <Icon Name="IconName.Fire" class="mini-icon" /> @user.CurrentStreak streak
+                                    </span>
+                                </div>
+                                @if (!IsFriend(user.UserId) && user.UserId != _currentUserId)
+                                {
+                                    <button class="btn-add-friend" @onclick="() => SendFriendRequest(user.UserId)" disabled="@_sentRequests.Contains(user.UserId)">
+                                        @if (_sentRequests.Contains(user.UserId))
+                                        {
+                                            <Icon Name="IconName.Check2" />
+                                            <span>Sendt</span>
+                                        }
+                                        else
+                                        {
+                                            <Icon Name="IconName.PersonPlusFill" />
+                                            <span>Tilføj</span>
+                                        }
+                                    </button>
+                                }
+                                else if (user.UserId == _currentUserId)
+                                {
+                                    <span class="you-badge">Dig</span>
+                                }
+                                else
+                                {
+                                    <span class="friend-badge">Ven</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(_searchQuery) && !_isSearching)
+                {
+                    <div class="empty-state">
+                        <Icon Name="IconName.PersonX" Size="IconSize.x3" />
+                        <p>Ingen brugere fundet</p>
+                    </div>
+                }
+            </div>
+
+            <!-- All Users Section -->
+            <div class="social-card mb-4">
+                <div class="card-header-row">
+                    <h4 class="card-title">
+                        <Icon Name="IconName.PeopleFill" class="me-2" />
+                        Alle Brugere
+                    </h4>
+                    @if (_allUsers != null)
+                    {
+                        <Badge Color="BadgeColor.Info">@_allUsers.TotalCount brugere</Badge>
+                    }
+                </div>
+
+                @if (_isLoadingUsers)
+                {
+                    <div class="text-center py-4">
+                        <Spinner Type="SpinnerType.Border" Size="SpinnerSize.Small" />
+                    </div>
+                }
+                else if (_allUsers != null && _allUsers.Users.Any())
+                {
+                    <div class="users-grid">
+                        @foreach (var user in _allUsers.Users)
+                        {
+                            <div class="user-card">
+                                <div class="user-card-avatar">
+                                    <Icon Name="IconName.PersonCircle" Size="IconSize.x3" />
+                                    @if (user.IsCurrentlyCheckedIn)
+                                    {
+                                        <span class="online-indicator"></span>
+                                    }
+                                </div>
+                                <div class="user-card-info">
+                                    <span class="user-card-email">@user.Email</span>
+                                    <div class="user-card-stats">
+                                        <span class="stat-item">
+                                            <Icon Name="IconName.Fire" class="mini-icon" />
+                                            @user.CurrentStreak
+                                        </span>
+                                        @if (user.IsCurrentlyCheckedIn)
+                                        {
+                                            <span class="stat-item active">
+                                                <Icon Name="IconName.BuildingFill" class="mini-icon" />
+                                                I centret
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                                @if (!IsFriend(user.UserId) && user.UserId != _currentUserId)
+                                {
+                                    <button class="btn-add-friend" @onclick="() => SendFriendRequest(user.UserId)" disabled="@_sentRequests.Contains(user.UserId)">
+                                        @if (_sentRequests.Contains(user.UserId))
+                                        {
+                                            <Icon Name="IconName.Check2" />
+                                        }
+                                        else
+                                        {
+                                            <Icon Name="IconName.PersonPlusFill" />
+                                        }
+                                    </button>
+                                }
+                                else if (user.UserId == _currentUserId)
+                                {
+                                    <span class="you-badge">Dig</span>
+                                }
+                                else
+                                {
+                                    <span class="friend-badge">Ven</span>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    @if (TotalPages > 1)
+                    {
+                        <div class="pagination-controls">
+                            <button class="pagination-btn" @onclick="PreviousPage" disabled="@(_currentPage <= 1)">
+                                <Icon Name="IconName.ChevronLeft" />
+                                Forrige
+                            </button>
+                            <span class="page-indicator">Side @_currentPage af @TotalPages</span>
+                            <button class="pagination-btn" @onclick="NextPage" disabled="@(_currentPage >= TotalPages)">
+                                Næste
+                                <Icon Name="IconName.ChevronRight" />
+                            </button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <Icon Name="IconName.People" Size="IconSize.x3" />
+                        <p>Ingen brugere fundet</p>
+                    </div>
+                }
+            </div>
+
+            <!-- My Friends Section -->
+            <div class="social-card">
+                <div class="card-header-row">
+                    <h4 class="card-title">
+                        <Icon Name="IconName.PeopleFill" class="me-2" />
+                        Mine Venner
+                    </h4>
+                    <Badge Color="BadgeColor.Primary">@_friends.Count venner</Badge>
+                </div>
+
+                @if (_friends.Any())
+                {
+                    <div class="friends-grid">
+                        @foreach (var friend in _friends)
+                        {
+                            <div class="friend-card @(friend.IsCurrentlyCheckedIn ? "friend-active" : "")">
+                                <div class="friend-card-avatar">
+                                    <Icon Name="IconName.PersonCircle" Size="IconSize.x4" />
+                                    @if (friend.IsCurrentlyCheckedIn)
+                                    {
+                                        <span class="online-indicator"></span>
+                                    }
+                                </div>
+                                <div class="friend-card-info">
+                                    <span class="friend-card-name">@friend.Email</span>
+                                    <div class="friend-card-stats">
+                                        <span class="stat-item">
+                                            <Icon Name="IconName.Fire" class="mini-icon" />
+                                            @friend.CurrentStreak
+                                        </span>
+                                        @if (friend.IsCurrentlyCheckedIn)
+                                        {
+                                            <span class="stat-item active">
+                                                <Icon Name="IconName.BuildingFill" class="mini-icon" />
+                                                I centret
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                                <button class="btn-unfriend" @onclick="() => ShowUnfriendConfirm(friend)" title="Fjern ven">
+                                    <Icon Name="IconName.PersonDash" />
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <Icon Name="IconName.People" Size="IconSize.x5" />
+                        <p>Du har ingen venner endnu</p>
+                        <span class="empty-hint">Brug søgningen ovenfor for at finde venner</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Unfriend Confirmation Modal -->
+@if (_showUnfriendModal)
+{
+    <div class="modal-overlay" @onclick="CloseUnfriendModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <h4>Fjern ven?</h4>
+            <p>Er du sikker på at du vil fjerne <strong>@_friendToUnfriend?.Email</strong> som ven?</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" @onclick="CloseUnfriendModal">Annuller</button>
+                <button class="btn-confirm-unfriend" @onclick="ConfirmUnfriend" disabled="@_isUnfriending">
+                    @if (_isUnfriending)
+                    {
+                        <Spinner Type="SpinnerType.Border" Size="SpinnerSize.Small" />
+                    }
+                    else
+                    {
+                        <span>Fjern ven</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private Guid _currentUserId;
+    private bool _isLoading = true;
+
+    private List<UserProfileDto> _friends = new();
+    private List<UserProfileDto> _friendsAtGym = new();
+    private List<FriendRequestDto> _pendingRequests = new();
+
+    private string _searchQuery = "";
+    private List<UserProfileDto> _searchResults = new();
+    private bool _isSearching = false;
+    private System.Timers.Timer? _debounceTimer;
+
+    private HashSet<string> _processingRequestId = new();
+    private HashSet<Guid> _sentRequests = new();
+
+    private bool _showUnfriendModal = false;
+    private UserProfileDto? _friendToUnfriend;
+    private bool _isUnfriending = false;
+
+    // All Users pagination
+    private PagedUsersDto? _allUsers;
+    private int _currentPage = 1;
+    private const int PageSize = 10;
+    private bool _isLoadingUsers = false;
+    private int TotalPages => _allUsers == null ? 0 : (int)Math.Ceiling((double)_allUsers.TotalCount / PageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await AuthService.GetCurrentUserAsync();
+        if (user != null)
+        {
+            _currentUserId = user.Id;
+            await LoadAllData();
+        }
+        _isLoading = false;
+    }
+
+    private async Task LoadAllData()
+    {
+        var friendsTask = SocialService.GetFriendsAsync(_currentUserId);
+        var friendsAtGymTask = SocialService.GetFriendsAtGymAsync(_currentUserId);
+        var pendingRequestsTask = SocialService.GetPendingRequestsAsync(_currentUserId);
+        var allUsersTask = LoadAllUsersAsync();
+
+        await Task.WhenAll(friendsTask, friendsAtGymTask, pendingRequestsTask, allUsersTask);
+
+        _friends = friendsTask.Result;
+        _friendsAtGym = friendsAtGymTask.Result;
+        _pendingRequests = pendingRequestsTask.Result;
+    }
+
+    private async Task LoadAllUsersAsync()
+    {
+        _isLoadingUsers = true;
+        StateHasChanged();
+
+        _allUsers = await SocialService.GetAllUsersAsync(_currentPage, PageSize);
+
+        _isLoadingUsers = false;
+        StateHasChanged();
+    }
+
+    private async Task NextPage()
+    {
+        if (_currentPage < TotalPages)
+        {
+            _currentPage++;
+            await LoadAllUsersAsync();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_currentPage > 1)
+        {
+            _currentPage--;
+            await LoadAllUsersAsync();
+        }
+    }
+
+    private void OnSearchInput()
+    {
+        _debounceTimer?.Stop();
+        _debounceTimer?.Dispose();
+
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            _searchResults.Clear();
+            _isSearching = false;
+            StateHasChanged();
+            return;
+        }
+
+        _isSearching = true;
+        StateHasChanged();
+
+        _debounceTimer = new System.Timers.Timer(300);
+        _debounceTimer.Elapsed += async (sender, e) =>
+        {
+            _debounceTimer?.Stop();
+            await InvokeAsync(async () =>
+            {
+                _searchResults = await SocialService.SearchUsersAsync(_searchQuery);
+                _isSearching = false;
+                StateHasChanged();
+            });
+        };
+        _debounceTimer.AutoReset = false;
+        _debounceTimer.Start();
+    }
+
+    private bool IsFriend(Guid userId) => _friends.Any(f => f.UserId == userId);
+
+    private async Task SendFriendRequest(Guid receiverId)
+    {
+        var request = new SendFriendRequestDto(_currentUserId, receiverId);
+        var success = await SocialService.SendFriendRequestAsync(request);
+        if (success)
+        {
+            _sentRequests.Add(receiverId);
+        }
+    }
+
+    private async Task AcceptRequest(string requestId)
+    {
+        _processingRequestId.Add(requestId);
+        StateHasChanged();
+
+        var success = await SocialService.AcceptFriendRequestAsync(requestId);
+        if (success)
+        {
+            _pendingRequests.RemoveAll(r => r.Id == requestId);
+            _friends = await SocialService.GetFriendsAsync(_currentUserId);
+            _friendsAtGym = await SocialService.GetFriendsAtGymAsync(_currentUserId);
+        }
+
+        _processingRequestId.Remove(requestId);
+    }
+
+    private async Task RejectRequest(string requestId)
+    {
+        _processingRequestId.Add(requestId);
+        StateHasChanged();
+
+        var success = await SocialService.RejectFriendRequestAsync(requestId);
+        if (success)
+        {
+            _pendingRequests.RemoveAll(r => r.Id == requestId);
+        }
+
+        _processingRequestId.Remove(requestId);
+    }
+
+    private void ShowUnfriendConfirm(UserProfileDto friend)
+    {
+        _friendToUnfriend = friend;
+        _showUnfriendModal = true;
+    }
+
+    private void CloseUnfriendModal()
+    {
+        _showUnfriendModal = false;
+        _friendToUnfriend = null;
+    }
+
+    private async Task ConfirmUnfriend()
+    {
+        if (_friendToUnfriend == null) return;
+
+        _isUnfriending = true;
+        StateHasChanged();
+
+        var success = await SocialService.UnfriendAsync(_currentUserId, _friendToUnfriend.UserId);
+        if (success)
+        {
+            _friends.RemoveAll(f => f.UserId == _friendToUnfriend.UserId);
+            _friendsAtGym.RemoveAll(f => f.UserId == _friendToUnfriend.UserId);
+        }
+
+        _isUnfriending = false;
+        CloseUnfriendModal();
+    }
+
+    private string FormatTimeAgo(DateTime dateTime)
+    {
+        var diff = DateTime.UtcNow - dateTime;
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} min siden";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} timer siden";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} dage siden";
+        return dateTime.ToString("d. MMM");
+    }
+
+    public void Dispose()
+    {
+        _debounceTimer?.Dispose();
+    }
+}

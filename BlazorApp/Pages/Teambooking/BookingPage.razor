@@ -1,5 +1,6 @@
 @page "/bookingpage"
 @inject IBookingService BookingService
+@inject IGymService GymService
 @inject IAuthService AuthService
 @attribute [Authorize]
 
@@ -17,6 +18,17 @@
         }
     </div>
 
+    <div class="gym-filter mb-4">
+        <label class="form-label">Filtrer efter center</label>
+        <select class="form-select" @bind="SelectedGymFilter">
+            <option value="">Alle centre</option>
+            @foreach (var gym in Gyms)
+            {
+                <option value="@gym.Id">@gym.Name</option>
+            }
+        </select>
+    </div>
+
     @if (IsLoading)
     {
         <div class="text-center py-5">
@@ -31,16 +43,24 @@
             <Button Color="ButtonColor.Link" @onclick="LoadBookings">Prøv igen</Button>
         </Alert>
     }
-    else if (!Bookings.Any())
+    else if (!FilteredBookings.Any())
     {
         <Alert Color="AlertColor.Info">
-            <Icon Name="IconName.InfoCircle" /> Der er ingen hold tilgængelige i øjeblikket.
+            <Icon Name="IconName.InfoCircle" />
+            @if (SelectedGymFilter.HasValue)
+            {
+                <span>Der er ingen hold på det valgte center.</span>
+            }
+            else
+            {
+                <span>Der er ingen hold tilgængelige i øjeblikket.</span>
+            }
         </Alert>
     }
     else
     {
         <div class="booking-cards">
-            @foreach (var booking in Bookings)
+            @foreach (var booking in FilteredBookings)
             {
                 <BookingCard
                     Booking="booking"
@@ -65,7 +85,13 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Center</label>
-                <input type="text" class="form-control" @bind="NewBooking.CenterName" placeholder="f.eks. FitLife Downtown" />
+                <select class="form-select" @bind="NewBooking.SelectedGymId">
+                    <option value="">Vælg center...</option>
+                    @foreach (var gym in Gyms)
+                    {
+                        <option value="@gym.Id">@gym.Name</option>
+                    }
+                </select>
             </div>
             <div class="mb-3">
                 <label class="form-label">Kapacitet</label>
@@ -105,9 +131,15 @@
 
 @code {
     private List<BookingDto> Bookings { get; set; } = new();
+    private List<BlazorApp.Services.Gym.GymDto> Gyms { get; set; } = new();
     private bool IsLoading { get; set; } = true;
     private bool IsAdmin { get; set; }
     private string? ErrorMessage { get; set; }
+    private Guid? SelectedGymFilter { get; set; }
+
+    private List<BookingDto> FilteredBookings => SelectedGymFilter.HasValue
+        ? Bookings.Where(b => b.GymId == SelectedGymFilter.Value).ToList()
+        : Bookings;
 
     // Create modal state
     private bool ShowCreateModal { get; set; }
@@ -120,6 +152,16 @@
     {
         var role = await AuthService.GetCurrentRoleAsync();
         IsAdmin = role is "Admin" or "Manager";
+
+        // Load gyms for the create form dropdown
+        try
+        {
+            Gyms = await GymService.GetAllGymsAsync();
+        }
+        catch
+        {
+            // Gyms loading failure is not critical for viewing bookings
+        }
 
         await LoadBookings();
     }
@@ -171,7 +213,7 @@
             CreateErrorMessage = "Genre er påkrævet.";
             return;
         }
-        if (string.IsNullOrWhiteSpace(NewBooking.CenterName))
+        if (NewBooking.SelectedGymId == Guid.Empty)
         {
             CreateErrorMessage = "Center er påkrævet.";
             return;
@@ -194,10 +236,19 @@
 
         IsCreating = true;
 
+        var selectedGym = Gyms.FirstOrDefault(g => g.Id == NewBooking.SelectedGymId);
+        if (selectedGym == null)
+        {
+            CreateErrorMessage = "Ugyldigt center valgt.";
+            IsCreating = false;
+            return;
+        }
+
         var createDto = new BookingCreateDto(
             NewBooking.Name,
             NewBooking.Genre,
-            NewBooking.CenterName,
+            selectedGym.Id,
+            selectedGym.Name,
             NewBooking.Capacity,
             NewBooking.TimeStart,
             NewBooking.TimeEnd
@@ -233,7 +284,7 @@
     {
         public string Name { get; set; } = "";
         public string Genre { get; set; } = "";
-        public string CenterName { get; set; } = "";
+        public Guid SelectedGymId { get; set; } = Guid.Empty;
         public int Capacity { get; set; } = 20;
         public DateTime? TimeStart { get; set; } = DateTime.Now.AddHours(1);
         public DateTime? TimeEnd { get; set; } = DateTime.Now.AddHours(2);

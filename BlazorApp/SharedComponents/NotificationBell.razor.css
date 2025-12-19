@@ -1,0 +1,66 @@
+.notification-bell-container {
+    position: relative;
+}
+
+.notification-bell-button {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.notification-bell-button:hover {
+    background: rgba(0, 122, 255, 0.08);
+}
+
+.notification-bell-button ::deep svg,
+.notification-bell-button ::deep i {
+    color: #333;
+    transition: color 0.2s ease;
+}
+
+.notification-bell-button:hover ::deep svg,
+.notification-bell-button:hover ::deep i {
+    color: #007AFF;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    color: white;
+    background: linear-gradient(135deg, #FF3B30 0%, #FF453A 100%);
+    border-radius: 9px;
+    box-shadow: 0 2px 6px rgba(255, 59, 48, 0.4);
+    animation: badgePulse 2s infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.notification-panel-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    background: transparent;
+}

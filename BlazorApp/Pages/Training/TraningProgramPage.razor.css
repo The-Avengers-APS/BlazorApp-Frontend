@@ -217,3 +217,36 @@
 ::deep .training-card-wrapper {
     cursor: pointer;
 }
+
+/* Exercise Checkboxes */
+.exercise-checkbox {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    cursor: pointer;
+    accent-color: #198754;
+    flex-shrink: 0;
+}
+
+.exercise-item.completed {
+    opacity: 0.7;
+}
+
+.exercise-item.completed .exercise-name {
+    text-decoration: line-through;
+    color: #198754;
+}
+
+.exercise-item.completed .exercise-details {
+    opacity: 0.6;
+}
+
+/* Play button in workout header */
+.workout-play-btn {
+    padding: 4px 8px;
+    min-width: 36px;
+}
+
+.workout-completed-info {
+    font-size: 0.9rem;
+}

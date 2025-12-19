@@ -1,32 +1,66 @@
+@inject IGymService GymService
+
 <Card Class="checkin-card">
     <CardBody>
         <div class="checkin-content">
             <div class="checkin-text">
                 <h5>Klar til træning?</h5>
-                <p class="text-muted mb-0">Check ind og start din session</p>
+                <p class="text-muted mb-0">Vælg center og check ind</p>
             </div>
             <Button Color="ButtonColor.Primary" Size="ButtonSize.Large"
-                    @onclick="ShowLocationModal">
-                Check ind
+                    @onclick="ShowLocationModal" Disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <Spinner Size="SpinnerSize.Small" />
+                }
+                else
+                {
+                    <span>Check ind</span>
+                }
             </Button>
         </div>
     </CardBody>
 </Card>
 
-<Modal @ref="locationModal" Title="Bekræft lokalitet" Size="ModalSize.Regular">
+<Modal @ref="locationModal" Title="Vælg FitLife Center" Size="ModalSize.Regular">
     <BodyTemplate>
         <div class="modal-content-text">
             <Icon Name="IconName.GeoAltFill" Size="IconSize.x4" Color="IconColor.Primary" />
-            <p class="mt-3">Er du i nærheden af FitLife centret?</p>
-            <small class="text-muted">Vi skal bekræfte din placering for at checke dig ind</small>
+            <p class="mt-3">Hvilket FitLife center træner du i?</p>
+
+            <div class="gym-select mt-3">
+                <select class="form-select" @bind="_selectedGymName">
+                    <option value="">Vælg center...</option>
+                    @foreach (var gym in _gyms)
+                    {
+                        <option value="@gym.Name">@gym.Name (@gym.CurrentOccupancy/@gym.Capacity)</option>
+                    }
+                </select>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger mt-3" role="alert">
+                    @_errorMessage
+                </div>
+            }
         </div>
     </BodyTemplate>
     <FooterTemplate>
-        <Button Color="ButtonColor.Secondary" @onclick="HideLocationModal">
+        <Button Color="ButtonColor.Secondary" @onclick="HideLocationModal" Disabled="@_isCheckingIn">
             Annuller
         </Button>
-        <Button Color="ButtonColor.Primary" @onclick="ConfirmCheckIn">
-            Bekræft
+        <Button Color="ButtonColor.Primary" @onclick="ConfirmCheckIn"
+                Disabled="@(string.IsNullOrEmpty(_selectedGymName) || _isCheckingIn)">
+            @if (_isCheckingIn)
+            {
+                <Spinner Size="SpinnerSize.Small" />
+                <span class="ms-2">Checker ind...</span>
+            }
+            else
+            {
+                <span>Bekræft</span>
+            }
         </Button>
     </FooterTemplate>
 </Modal>
@@ -36,7 +70,7 @@
         <div class="modal-content-text success-modal">
             <Icon Name="IconName.CheckCircleFill" Size="IconSize.x5" Color="IconColor.Success" />
             <h5 class="mt-3">Du er nu checket ind!</h5>
-            <p class="text-muted">Din streak er blevet opdateret</p>
+            <p class="text-muted">@_selectedGymName</p>
             <div class="streak-badge">
                 <Icon Name="IconName.Fire" Color="IconColor.Warning" />
                 <span>@Streak.CurrentStreak dages streak</span>
@@ -54,11 +88,45 @@
     [Parameter]
     public UserStreak Streak { get; set; } = new();
 
+    [Parameter]
+    public EventCallback OnCheckInCompleted { get; set; }
+
     private Modal locationModal = default!;
     private Modal successModal = default!;
 
+    private List<BlazorApp.Services.Gym.GymDto> _gyms = new();
+    private string _selectedGymName = string.Empty;
+    private string _errorMessage = string.Empty;
+    private bool _isLoading = false;
+    private bool _isCheckingIn = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGymsAsync();
+    }
+
+    private async Task LoadGymsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _gyms = await GymService.GetAllGymsAsync();
+        }
+        catch
+        {
+            _gyms = new List<BlazorApp.Services.Gym.GymDto>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
     private async Task ShowLocationModal()
     {
+        _errorMessage = string.Empty;
+        // Refresh gym list when opening modal
+        await LoadGymsAsync();
         await locationModal.ShowAsync();
     }
 
@@ -69,14 +137,47 @@
 
     private async Task ConfirmCheckIn()
     {
-        // Simulate check-in logic (update streak in-memory)
-        Streak.CheckedInToday = true;
-        Streak.CurrentStreak++;
-        Streak.LastCheckIn = DateTime.Now;
+        if (string.IsNullOrEmpty(_selectedGymName))
+        {
+            _errorMessage = "Vælg venligst et center";
+            return;
+        }
 
-        await locationModal.HideAsync();
-        await Task.Delay(300); // Small delay for smooth transition
-        await successModal.ShowAsync();
+        _isCheckingIn = true;
+        _errorMessage = string.Empty;
+
+        try
+        {
+            var result = await GymService.CheckInAsync(_selectedGymName);
+
+            if (result != null)
+            {
+                // Mark as checked in today for UI feedback
+                // Don't increment streak locally - server calculates the actual streak
+                // based on consecutive days. The accurate value will show on page refresh.
+                Streak.CheckedInToday = true;
+                Streak.LastCheckIn = result.CheckInTime;
+
+                // Notify parent to refresh live activity data
+                await OnCheckInCompleted.InvokeAsync();
+
+                await locationModal.HideAsync();
+                await Task.Delay(300); // Small delay for smooth transition
+                await successModal.ShowAsync();
+            }
+            else
+            {
+                _errorMessage = "Check-in mislykkedes. Prøv igen.";
+            }
+        }
+        catch
+        {
+            _errorMessage = "Der opstod en fejl. Prøv igen.";
+        }
+        finally
+        {
+            _isCheckingIn = false;
+        }
     }
 
     private async Task HideSuccessModal()

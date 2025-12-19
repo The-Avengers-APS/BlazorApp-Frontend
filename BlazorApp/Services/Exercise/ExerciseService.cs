@@ -30,18 +30,6 @@ public class ExerciseService : IExerciseService
         }
     }
 
-    public async Task<ExerciseDto?> GetExerciseByIdAsync(Guid id)
-    {
-        try
-        {
-            return await _httpClient.GetFromJsonAsync<ExerciseDto>($"api/exercise/{id}");
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     public async Task<ExerciseDto?> CreateExerciseAsync(CreateExerciseRequest request)
     {
         try
@@ -101,18 +89,6 @@ public class ExerciseService : IExerciseService
         catch
         {
             return [];
-        }
-    }
-
-    public async Task<WorkoutDto?> GetWorkoutByIdAsync(Guid id)
-    {
-        try
-        {
-            return await _httpClient.GetFromJsonAsync<WorkoutDto>($"api/workout/{id}");
-        }
-        catch
-        {
-            return null;
         }
     }
 
@@ -304,18 +280,6 @@ public class ExerciseService : IExerciseService
         }
     }
 
-    public async Task<UserProgramDto?> GetUserProgramByIdAsync(Guid id)
-    {
-        try
-        {
-            return await _httpClient.GetFromJsonAsync<UserProgramDto>($"api/user/program/{id}");
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     public async Task<UserProgramDto?> EnrollInProgramAsync(EnrollProgramRequest request)
     {
         try
@@ -333,19 +297,6 @@ public class ExerciseService : IExerciseService
         }
     }
 
-    public async Task<bool> UpdateProgramProgressAsync(Guid id, UpdateProgramProgressRequest request)
-    {
-        try
-        {
-            var response = await _httpClient.PutAsJsonAsync($"api/user/program/{id}/progress", request);
-            return response.IsSuccessStatusCode;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     public async Task<bool> UnenrollFromProgramAsync(Guid id)
     {
         try
@@ -359,36 +310,20 @@ public class ExerciseService : IExerciseService
         }
     }
 
+    public async Task<bool> RestartProgramAsync(Guid userProgramId)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsync($"api/user/program/{userProgramId}/restart", null);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     // ============== User Workouts ==============
-
-    public async Task<List<UserWorkoutDto>> GetUserWorkoutsAsync(Guid userId)
-    {
-        try
-        {
-            var response = await _httpClient.GetAsync($"api/user/workout?userId={userId}");
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadFromJsonAsync<List<UserWorkoutDto>>() ?? [];
-            }
-            return [];
-        }
-        catch
-        {
-            return [];
-        }
-    }
-
-    public async Task<UserWorkoutDto?> GetUserWorkoutByIdAsync(Guid id)
-    {
-        try
-        {
-            return await _httpClient.GetFromJsonAsync<UserWorkoutDto>($"api/user/workout/{id}");
-        }
-        catch
-        {
-            return null;
-        }
-    }
 
     public async Task<List<UserWorkoutDto>> GetUserWorkoutsForProgramAsync(Guid programId, Guid userId)
     {
@@ -424,19 +359,6 @@ public class ExerciseService : IExerciseService
         }
     }
 
-    public async Task<bool> UpdateUserWorkoutAsync(Guid id, UpdateUserWorkoutRequest request)
-    {
-        try
-        {
-            var response = await _httpClient.PutAsJsonAsync($"api/user/workout/{id}", request);
-            return response.IsSuccessStatusCode;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     public async Task<bool> CompleteUserWorkoutAsync(Guid id)
     {
         try
@@ -450,11 +372,13 @@ public class ExerciseService : IExerciseService
         }
     }
 
-    public async Task<bool> DeleteUserWorkoutAsync(Guid id)
+    public async Task<bool> ToggleExerciseCompletionAsync(Guid userWorkoutId, Guid exerciseId, bool isCompleted)
     {
         try
         {
-            var response = await _httpClient.DeleteAsync($"api/user/workout/{id}");
+            var response = await _httpClient.PutAsJsonAsync(
+                $"api/user/workout/{userWorkoutId}/exercise/{exerciseId}/complete",
+                isCompleted);
             return response.IsSuccessStatusCode;
         }
         catch

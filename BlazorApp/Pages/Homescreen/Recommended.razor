@@ -1,19 +1,39 @@
+@inject NavigationManager NavigationManager
+
 <div class="recommended-container">
-    <Card Class="recommended-card training-card">
+    <Card Class="recommended-card training-card" @onclick="NavigateToProgram" style="cursor: pointer;">
         <CardBody>
             <div class="card-header-small">
                 <Icon Name="IconName.ClipboardCheck" Color="IconColor.Primary" />
-                <span class="card-label">I dags plan</span>
+                <span class="card-label">@(TodaysPlan.HasActiveProgram ? "Dit program" : "Træningsplan")</span>
             </div>
             <h5 class="plan-name">@TodaysPlan.Name</h5>
-            <div class="plan-details">
-                <Badge Color="BadgeColor.Light">
-                    @TodaysPlan.ExerciseCount øvelser
-                </Badge>
-                <Badge Color="BadgeColor.Light">
-                    @TodaysPlan.DurationMinutes min
-                </Badge>
-            </div>
+            @if (TodaysPlan.HasActiveProgram)
+            {
+                <div class="plan-progress mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Fremgang</small>
+                        <small class="text-muted">@TodaysPlan.CompletedExercises / @TodaysPlan.TotalExercises øvelser</small>
+                    </div>
+                    <Progress Class="progress-sm">
+                        <ProgressBar Width="@TodaysPlan.ProgressPercentage" Color="ProgressColor.Success" />
+                    </Progress>
+                </div>
+            }
+            else
+            {
+                <div class="plan-details">
+                    <Badge Color="BadgeColor.Light">
+                        @TodaysPlan.ExerciseCount øvelser
+                    </Badge>
+                    @if (TodaysPlan.DurationMinutes > 0)
+                    {
+                        <Badge Color="BadgeColor.Light">
+                            @TodaysPlan.DurationMinutes min
+                        </Badge>
+                    }
+                </div>
+            }
         </CardBody>
     </Card>
 
@@ -43,4 +63,16 @@
 
     [Parameter]
     public TeamSession NextSession { get; set; } = new();
+
+    private void NavigateToProgram()
+    {
+        if (TodaysPlan.HasActiveProgram && TodaysPlan.ProgramId.HasValue)
+        {
+            NavigationManager.NavigateTo($"/training/{TodaysPlan.ProgramId}");
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/trainingpage");
+        }
+    }
 }

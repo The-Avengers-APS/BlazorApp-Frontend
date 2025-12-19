@@ -1,5 +1,14 @@
 namespace BlazorApp.Services.Exercise;
 
+// ============== Enums ==============
+
+public enum Difficulty
+{
+    Begynder,
+    Intermediær,
+    Avanceret
+}
+
 // ============== Exercise DTOs ==============
 
 public record ExerciseDto(
@@ -13,7 +22,7 @@ public record ExerciseDto(
     string? RirTarget = null,
     string? Tempo = null,
     string? Notes = null,
-    string? Difficulty = null,
+    Difficulty? Difficulty = null,
     List<string>? CoachingCues = null,
     List<string>? CommonMistakes = null
 );
@@ -28,7 +37,7 @@ public record CreateExerciseRequest(
     string? RirTarget = null,
     string? Tempo = null,
     string? Notes = null,
-    string? Difficulty = null,
+    Difficulty? Difficulty = null,
     List<string>? CoachingCues = null,
     List<string>? CommonMistakes = null
 );
@@ -43,7 +52,7 @@ public record UpdateExerciseRequest(
     string? RirTarget = null,
     string? Tempo = null,
     string? Notes = null,
-    string? Difficulty = null,
+    Difficulty? Difficulty = null,
     List<string>? CoachingCues = null,
     List<string>? CommonMistakes = null
 );
@@ -131,7 +140,7 @@ public record TrainingProgramDto(
     Guid Id,
     string Title,
     string? Description,
-    string Difficulty,
+    Difficulty Difficulty,
     int DurationWeeks,
     int TotalWorkouts,
     List<ProgramWorkoutDto> Workouts,
@@ -154,7 +163,7 @@ public record ProgramWorkoutDto(
 public record CreateTrainingProgramRequest(
     string Title,
     string? Description,
-    string Difficulty,
+    Difficulty Difficulty,
     int DurationWeeks,
     int TotalWorkouts,
     ProgramDurationDto? Duration = null,
@@ -170,7 +179,7 @@ public record CreateTrainingProgramRequest(
 public record UpdateTrainingProgramRequest(
     string Title,
     string? Description,
-    string Difficulty,
+    Difficulty Difficulty,
     int DurationWeeks,
     int TotalWorkouts,
     ProgramDurationDto? Duration = null,
@@ -191,23 +200,27 @@ public record AddProgramWorkoutRequest(
 
 // ============== User Program DTOs ==============
 
+public enum ProgramStatus
+{
+    NotStarted,
+    Active,
+    Completed
+}
+
 public record UserProgramDto(
     Guid Id,
     Guid UserId,
     Guid ProgramId,
     DateTime StartedAt,
-    string Status,
-    int CurrentWeek
+    ProgramStatus Status,
+    int CurrentWeek,
+    DateTime? CompletedAt,
+    int CompletionCount
 );
 
 public record EnrollProgramRequest(
     Guid UserId,
     Guid ProgramId
-);
-
-public record UpdateProgramProgressRequest(
-    string Status,
-    int CurrentWeek
 );
 
 // ============== User Workout DTOs ==============
@@ -227,7 +240,8 @@ public record UserWorkoutExerciseDto(
     Guid ExerciseId,
     int OrderIndex,
     decimal WeightKg,
-    int TargetReps
+    int TargetReps,
+    bool IsCompleted
 );
 
 public record StartUserWorkoutRequest(
@@ -242,8 +256,4 @@ public record UserWorkoutExerciseInput(
     int OrderIndex,
     decimal WeightKg,
     int TargetReps
-);
-
-public record UpdateUserWorkoutRequest(
-    List<UserWorkoutExerciseInput> Exercises
 );

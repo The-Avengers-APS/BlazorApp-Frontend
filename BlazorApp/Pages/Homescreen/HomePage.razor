@@ -2,15 +2,17 @@
 @inject IBookingService BookingService
 @inject IAuthService AuthService
 @inject IStatsService StatsService
+@inject IExerciseService ExerciseService
+@inject IGymService GymService
 @attribute [Authorize]
 
 <PageTitle>FitLife - Hjem</PageTitle>
 
 <div class="homescreen-container">
     <Greetings Streak="@_userStreak" />
-    <CheckIn Streak="@_userStreak" />
+    <CheckIn Streak="@_userStreak" OnCheckInCompleted="RefreshAfterCheckInAsync" />
     <Recommended TodaysPlan="@_todaysPlan" NextSession="@_nextSession" />
-    <LiveActivity Occupancy="@_gymOccupancy" />
+    <LiveActivity Gyms="@_gyms" LastUpdated="@_gymsLastUpdated" OnRefresh="RefreshGymDataAsync" />
     <QuickActions Actions="@_quickActions" />
 </div>
 
@@ -24,7 +26,7 @@
         CheckedInToday = false
     };
 
-    // Will come from ExerciseService/TrainingService API
+    // Loaded from ExerciseService (single source of truth)
     private TrainingPlan _todaysPlan = new()
     {
         Name = "Ingen plan",
@@ -41,11 +43,8 @@
     };
 
     // Will come from real-time occupancy API
-    private GymOccupancy _gymOccupancy = new()
-    {
-        CurrentOccupancy = 0,
-        MaxCapacity = 150
-    };
+    private List<GymDto> _gyms = new();
+    private DateTime _gymsLastUpdated = DateTime.Now;
 
     // Navigation quick actions - these are static
     private List<QuickAction> _quickActions = new()
@@ -60,7 +59,9 @@
     {
         await Task.WhenAll(
             LoadNextBookingAsync(),
-            LoadUserStreakAsync()
+            LoadUserStreakAsync(),
+            LoadGymOccupancyAsync(),
+            LoadActiveProgramAsync()
         );
     }
 
@@ -73,10 +74,10 @@
             {
                 _userStreak = new UserStreak
                 {
-                    CurrentStreak = statistics.TotalCheckIns,
+                    CurrentStreak = statistics.CurrentStreak,
                     StreakGoal = 7,
-                    LastCheckIn = statistics.Training.LastSessionDate ?? DateTime.MinValue,
-                    CheckedInToday = statistics.Training.LastSessionDate?.Date == DateTime.Today
+                    LastCheckIn = statistics.LastCheckInDate ?? DateTime.MinValue,
+                    CheckedInToday = statistics.LastCheckInDate?.Date == DateTime.Today
                 };
             }
         }
@@ -136,6 +137,80 @@
         {
             // Keep default "Ingen booking" on error
         }
+    }
+
+    private async Task LoadGymOccupancyAsync()
+    {
+        try
+        {
+            _gyms = await GymService.GetAllGymsAsync();
+            _gymsLastUpdated = DateTime.Now;
+        }
+        catch
+        {
+            // Keep empty list on error
+        }
+    }
+
+    private async Task LoadActiveProgramAsync()
+    {
+        try
+        {
+            var user = await AuthService.GetCurrentUserAsync();
+            if (user == null) return;
+
+            // Get active program from ExerciseService (single source of truth)
+            var userPrograms = await ExerciseService.GetUserProgramsAsync(user.Id);
+            var activeUserProgram = userPrograms.FirstOrDefault(p => p.Status == ProgramStatus.Active);
+
+            if (activeUserProgram != null)
+            {
+                var program = await ExerciseService.GetTrainingProgramByIdAsync(activeUserProgram.ProgramId);
+                if (program != null)
+                {
+                    // Get user workouts to calculate progress
+                    var userWorkouts = await ExerciseService.GetUserWorkoutsForProgramAsync(program.Id, user.Id);
+                    var workouts = await ExerciseService.GetAllWorkoutsAsync();
+
+                    var totalExercises = program.Workouts.Sum(w =>
+                        workouts.FirstOrDefault(wo => wo.Id == w.WorkoutId)?.Exercises.Count ?? 0);
+
+                    var completedExercises = userWorkouts
+                        .Where(uw => uw.IsCompleted)
+                        .Sum(uw => uw.Exercises.Count(e => e.IsCompleted));
+
+                    _todaysPlan = new TrainingPlan
+                    {
+                        ProgramId = program.Id,
+                        Name = program.Title,
+                        TotalExercises = totalExercises,
+                        CompletedExercises = completedExercises,
+                        ExerciseCount = program.TotalWorkouts,
+                        DurationMinutes = 0
+                    };
+                }
+            }
+        }
+        catch
+        {
+            // Keep default "Ingen plan" on error
+        }
+    }
+
+    private async Task RefreshGymDataAsync()
+    {
+        await LoadGymOccupancyAsync();
+        StateHasChanged();
+    }
+
+    private async Task RefreshAfterCheckInAsync()
+    {
+        // Refresh both gym occupancy and user streak after check-in
+        await Task.WhenAll(
+            LoadGymOccupancyAsync(),
+            LoadUserStreakAsync()
+        );
+        StateHasChanged();
     }
 
     private string FormatBookingTime(DateTime timeStart)

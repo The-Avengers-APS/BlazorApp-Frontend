@@ -1,0 +1,106 @@
+@using BlazorBootstrap
+@using BlazorApp.Services.Notification
+
+<div class="notification-panel" @onclick:stopPropagation="true">
+    <div class="notification-panel-header">
+        <h3>Notifikationer</h3>
+        @if (Notifications.Any(n => !n.IsRead))
+        {
+            <button class="mark-all-read-btn" @onclick="OnMarkAllAsRead">
+                Marker alle som læst
+            </button>
+        }
+    </div>
+
+    <div class="notification-panel-content">
+        @if (IsLoading)
+        {
+            <div class="notification-loading">
+                <div class="spinner"></div>
+            </div>
+        }
+        else if (!Notifications.Any())
+        {
+            <div class="notification-empty">
+                <Icon Name="IconName.BellSlash" Size="IconSize.x5" />
+                <p>Ingen notifikationer</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var notification in Notifications)
+            {
+                <div class="notification-item @(notification.IsRead ? "read" : "unread")"
+                     @onclick="() => HandleClick(notification)">
+                    <div class="notification-icon">
+                        @switch (notification.Type)
+                        {
+                            case "FriendRequestReceived":
+                                <Icon Name="IconName.PersonPlus" />
+                                break;
+                            case "FriendRequestAccepted":
+                                <Icon Name="IconName.PersonCheck" />
+                                break;
+                            case "AchievementUnlocked":
+                                <Icon Name="IconName.Trophy" />
+                                break;
+                            default:
+                                <Icon Name="IconName.Bell" />
+                                break;
+                        }
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">@notification.Title</div>
+                        <div class="notification-message">@notification.Message</div>
+                        <div class="notification-time">@FormatTimeAgo(notification.CreatedAt)</div>
+                    </div>
+                    @if (!notification.IsRead)
+                    {
+                        <div class="notification-unread-dot"></div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<NotificationDto> Notifications { get; set; } = [];
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnMarkAsRead { get; set; }
+
+    [Parameter]
+    public EventCallback OnMarkAllAsRead { get; set; }
+
+    private async Task HandleClick(NotificationDto notification)
+    {
+        if (!notification.IsRead)
+        {
+            await OnMarkAsRead.InvokeAsync(notification.Id);
+        }
+    }
+
+    private string FormatTimeAgo(DateTime createdAt)
+    {
+        var diff = DateTime.UtcNow - createdAt;
+
+        if (diff.TotalMinutes < 1)
+            return "Lige nu";
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes} min siden";
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours} timer siden";
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays} dage siden";
+
+        return createdAt.ToString("d. MMM");
+    }
+}

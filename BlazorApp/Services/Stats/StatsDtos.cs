@@ -2,12 +2,13 @@ namespace BlazorApp.Services.Stats;
 
 public record UserStatisticsDto(
     Guid UserId,
-    string UserName,
-    string Email,
     TrainingStatsDto Training,
     TeamSessionStatsDto TeamSessions,
     ProgramProgressDto Programs,
     int TotalCheckIns,
+    int CurrentStreak,
+    int LongestStreak,
+    DateTime? LastCheckInDate,
     List<Guid> AchievementIds,
     DateTime CreatedAt,
     DateTime LastUpdated);
@@ -25,11 +26,7 @@ public record TeamSessionStatsDto(
     DateTime? LastSessionDate);
 
 public record ProgramProgressDto(
-    int TotalCompleted,
-    string? CurrentProgramName,
-    DateTime? CurrentProgramStartDate,
-    int CurrentProgramSessionsCompleted,
-    int CurrentProgramTotalSessions);
+    int TotalCompleted);
 
 public record AchievementDto(
     Guid UserId,
@@ -47,4 +44,14 @@ public record AchievementDefinitionDto(
     int Threshold,
     string Category);
 
-public record GrantAchievementRequest(Guid UserId, string AchievementType);
+public record ActivityRecordDto(
+    Guid Id,
+    string Type,
+    DateTime ActivityDate,
+    string Title,
+    string? Description,
+    Guid? WorkoutId,
+    string? BookingId,
+    Guid? ProgramId,
+    DateTime? BookingTimeEnd,
+    bool IsAttended);

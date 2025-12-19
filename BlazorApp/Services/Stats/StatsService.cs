@@ -25,15 +25,17 @@ public class StatsService : IStatsService
         }
     }
 
-    public async Task<UserStatisticsDto?> GetUserStatisticsAsync(Guid userId)
+    // Activity History (unified)
+
+    public async Task<List<ActivityRecordDto>> GetMyActivitiesAsync(int days = 90)
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<UserStatisticsDto>($"api/userstatistics/user/{userId}");
+            return await _httpClient.GetFromJsonAsync<List<ActivityRecordDto>>($"api/userstatistics/me/activities?days={days}") ?? [];
         }
         catch
         {
-            return null;
+            return [];
         }
     }
 
@@ -51,18 +53,6 @@ public class StatsService : IStatsService
         }
     }
 
-    public async Task<List<AchievementDto>> GetUserAchievementsAsync(Guid userId)
-    {
-        try
-        {
-            return await _httpClient.GetFromJsonAsync<List<AchievementDto>>($"api/achievements/user/{userId}") ?? [];
-        }
-        catch
-        {
-            return [];
-        }
-    }
-
     public async Task<List<AchievementDefinitionDto>> GetAchievementDefinitionsAsync()
     {
         try
@@ -72,19 +62,6 @@ public class StatsService : IStatsService
         catch
         {
             return [];
-        }
-    }
-
-    public async Task<bool> GrantAchievementAsync(GrantAchievementRequest request)
-    {
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync("api/achievements/grant", request);
-            return response.IsSuccessStatusCode;
-        }
-        catch
-        {
-            return false;
         }
     }
 }

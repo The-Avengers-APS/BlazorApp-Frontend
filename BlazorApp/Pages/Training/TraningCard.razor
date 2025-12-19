@@ -115,11 +115,11 @@
 
     private BadgeColor GetDifficultyColor()
     {
-        return Program.Difficulty?.ToLower() switch
+        return Program.Difficulty switch
         {
-            "beginner" or "begynder" => BadgeColor.Success,
-            "intermediate" or "mellem" => BadgeColor.Warning,
-            "advanced" or "avanceret" => BadgeColor.Danger,
+            Difficulty.Begynder => BadgeColor.Success,
+            Difficulty.Intermediær => BadgeColor.Warning,
+            Difficulty.Avanceret => BadgeColor.Danger,
             _ => BadgeColor.Secondary
         };
     }

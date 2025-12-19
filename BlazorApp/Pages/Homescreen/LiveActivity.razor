@@ -1,33 +1,139 @@
 <Card Class="live-activity-card">
     <CardBody>
         <div class="activity-header">
-            <small class="text-muted">Lige nu i centret</small>
-            <Badge Color="@GetBadgeColor()">@Occupancy.StatusText</Badge>
+            <div class="activity-header-left">
+                <small class="text-muted">Lige nu i centret</small>
+            </div>
+            <div class="activity-header-right">
+                @if (SelectedGym != null)
+                {
+                    <Badge Color="@GetBadgeColor()">@SelectedGym.StatusText</Badge>
+                }
+                <Button Color="ButtonColor.Light" Size="ButtonSize.Small"
+                        Class="refresh-btn" @onclick="HandleRefresh" Disabled="@_isRefreshing">
+                    @if (_isRefreshing)
+                    {
+                        <Spinner Size="SpinnerSize.Small" />
+                    }
+                    else
+                    {
+                        <Icon Name="IconName.ArrowClockwise" />
+                    }
+                </Button>
+            </div>
         </div>
 
-        <div class="activity-count">
-            <h3>@Occupancy.CurrentOccupancy Personer</h3>
+        <div class="gym-selector">
+            <select class="form-select form-select-sm" @bind="SelectedGymName">
+                @foreach (var gym in Gyms)
+                {
+                    <option value="@gym.Name">@gym.Location</option>
+                }
+            </select>
         </div>
 
-        <Progress Height="12" Class="occupancy-progress">
-            <ProgressBar Color="@GetProgressColor()"
-                         Width="@OccupancyPercentage" />
-        </Progress>
+        @if (SelectedGym != null)
+        {
+            <div class="activity-count">
+                <h3>@SelectedGym.CurrentOccupancy Personer</h3>
+            </div>
 
-        <div class="activity-footer">
-            <small class="capacity-text">Kapacitet: @Occupancy.MaxCapacity</small>
-        </div>
+            <Progress Height="12" Class="occupancy-progress">
+                <ProgressBar Color="@GetProgressColor()"
+                             Width="@SelectedGym.OccupancyPercent" />
+            </Progress>
+
+            <div class="activity-footer">
+                <small class="capacity-text">Kapacitet: @SelectedGym.Capacity</small>
+            </div>
+
+            <div class="last-updated">
+                <small class="text-muted">Sidst opdateret: @FormatLastUpdated()</small>
+            </div>
+        }
     </CardBody>
 </Card>
 
+@implements IDisposable
+
 @code {
     [Parameter]
-    public GymOccupancy Occupancy { get; set; } = new();
+    public List<GymDto> Gyms { get; set; } = new();
 
-    private double OccupancyPercentage =>
-        (double)Occupancy.CurrentOccupancy / Occupancy.MaxCapacity * 100;
+    [Parameter]
+    public DateTime LastUpdated { get; set; } = DateTime.Now;
 
-    private BadgeColor GetBadgeColor() => Occupancy.StatusColor switch
+    [Parameter]
+    public EventCallback OnRefresh { get; set; }
+
+    private string _selectedGymName = string.Empty;
+    private bool _isRefreshing = false;
+    private System.Threading.Timer? _autoRefreshTimer;
+    private const int AutoRefreshIntervalMinutes = 15;
+
+    private string SelectedGymName
+    {
+        get => _selectedGymName;
+        set
+        {
+            _selectedGymName = value;
+            StateHasChanged();
+        }
+    }
+
+    private GymDto? SelectedGym => Gyms.FirstOrDefault(g => g.Name == SelectedGymName) ?? Gyms.FirstOrDefault();
+
+    protected override void OnInitialized()
+    {
+        // Set up auto-refresh timer (every 15 minutes)
+        _autoRefreshTimer = new System.Threading.Timer(
+            async _ => await InvokeAsync(async () =>
+            {
+                await HandleRefresh();
+                StateHasChanged();
+            }),
+            null,
+            TimeSpan.FromMinutes(AutoRefreshIntervalMinutes),
+            TimeSpan.FromMinutes(AutoRefreshIntervalMinutes)
+        );
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrEmpty(_selectedGymName) && Gyms.Any())
+        {
+            _selectedGymName = Gyms.First().Name;
+        }
+    }
+
+    private async Task HandleRefresh()
+    {
+        _isRefreshing = true;
+        StateHasChanged();
+
+        await OnRefresh.InvokeAsync();
+
+        _isRefreshing = false;
+        StateHasChanged();
+    }
+
+    private string FormatLastUpdated()
+    {
+        var diff = DateTime.Now - LastUpdated;
+
+        if (diff.TotalSeconds < 60)
+            return "Lige nu";
+        if (diff.TotalMinutes < 2)
+            return "1 minut siden";
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes} minutter siden";
+        if (diff.TotalHours < 2)
+            return "1 time siden";
+
+        return LastUpdated.ToString("HH:mm");
+    }
+
+    private BadgeColor GetBadgeColor() => SelectedGym?.StatusColor switch
     {
         "success" => BadgeColor.Success,
         "warning" => BadgeColor.Warning,
@@ -35,11 +141,16 @@
         _ => BadgeColor.Secondary
     };
 
-    private ProgressColor GetProgressColor() => Occupancy.StatusColor switch
+    private ProgressColor GetProgressColor() => SelectedGym?.StatusColor switch
     {
         "success" => ProgressColor.Success,
         "warning" => ProgressColor.Warning,
         "danger" => ProgressColor.Danger,
         _ => ProgressColor.Secondary
     };
+
+    public void Dispose()
+    {
+        _autoRefreshTimer?.Dispose();
+    }
 }

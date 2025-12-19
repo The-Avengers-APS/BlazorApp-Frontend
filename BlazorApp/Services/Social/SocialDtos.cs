@@ -2,7 +2,6 @@ namespace BlazorApp.Services.Social;
 
 public record UserProfileDto(
     Guid UserId,
-    string UserName,
     string Email,
     bool IsCurrentlyCheckedIn,
     DateTime? LastCheckInTime,
@@ -13,9 +12,9 @@ public record UserProfileDto(
 public record FriendRequestDto(
     string Id,
     Guid SenderId,
-    string SenderUserName,
+    string SenderEmail,
     Guid ReceiverId,
-    string ReceiverUserName,
+    string ReceiverEmail,
     string Status,
     DateTime CreatedAt,
     DateTime? RespondedAt);
@@ -24,7 +23,8 @@ public record SendFriendRequestDto(
     Guid SenderId,
     Guid ReceiverId);
 
-public record StreakDto(
-    int CurrentStreak,
-    int LongestStreak,
-    DateTime? LastCheckInDate);
+public record PagedUsersDto(
+    List<UserProfileDto> Users,
+    int TotalCount,
+    int Page,
+    int PageSize);

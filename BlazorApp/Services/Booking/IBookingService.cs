@@ -8,11 +8,6 @@ public interface IBookingService
     Task<List<BookingDto>> GetAllBookingsAsync();
 
     /// <summary>
-    /// Get a specific booking by ID
-    /// </summary>
-    Task<BookingDto?> GetBookingByIdAsync(string id);
-
-    /// <summary>
     /// Join a booking (add current user as participant)
     /// </summary>
     Task<bool> JoinBookingAsync(string bookingId);

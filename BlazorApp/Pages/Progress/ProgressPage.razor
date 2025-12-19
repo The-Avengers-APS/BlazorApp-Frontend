@@ -1,7 +1,6 @@
 @page "/progresspage"
 @inject IStatsService StatsService
 @inject IAuthService AuthService
-@inject IExerciseService ExerciseService
 @inject IUserService UserService
 @attribute [Authorize]
 
@@ -72,7 +71,180 @@
                   CurrentStreak="@CurrentStreak"
                   CurrentWeight="@CurrentMetrics?.WeightKg" />
 
-        <History UserWorkouts="@UserWorkouts" WorkoutNames="@WorkoutNames" />
+        @* Unified Activity History - shows check-ins, workouts, and team sessions *@
+        <div class="activity-history-section mb-4">
+            <h5 class="mb-3">Seneste Aktivitet</h5>
+            @if (Activities.Any())
+            {
+                @foreach (var activity in Activities.Take(15))
+                {
+                    <Card Class="mb-2">
+                        <CardBody Class="py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="activity-icon">
+                                        @switch (activity.Type)
+                                        {
+                                            case "CheckIn":
+                                                <span class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <Icon Name="IconName.GeoAltFill" />
+                                                </span>
+                                                break;
+                                            case "Workout":
+                                                <span class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <Icon Name="IconName.Activity" />
+                                                </span>
+                                                break;
+                                            case "TeamSession":
+                                                <span class="bg-info bg-opacity-10 text-info rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <Icon Name="IconName.PeopleFill" />
+                                                </span>
+                                                break;
+                                        }
+                                    </div>
+                                    <div>
+                                        <span class="fw-medium">@activity.Title</span>
+                                        @if (!string.IsNullOrEmpty(activity.Description))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@activity.Description</small>
+                                        }
+                                        <br />
+                                        <small class="text-muted">@FormatActivityDate(activity.ActivityDate)</small>
+                                    </div>
+                                </div>
+                                <div>
+                                    @switch (activity.Type)
+                                    {
+                                        case "CheckIn":
+                                            <Badge Color="BadgeColor.Primary">Check-in</Badge>
+                                            break;
+                                        case "Workout":
+                                            <Badge Color="BadgeColor.Success">Fuldført</Badge>
+                                            break;
+                                        case "TeamSession":
+                                            @if (activity.IsAttended)
+                                            {
+                                                <Badge Color="BadgeColor.Info">Deltaget</Badge>
+                                            }
+                                            else
+                                            {
+                                                <Badge Color="BadgeColor.Warning">Kommende</Badge>
+                                            }
+                                            break;
+                                    }
+                                </div>
+                            </div>
+                        </CardBody>
+                    </Card>
+                }
+            }
+            else
+            {
+                <Card>
+                    <CardBody>
+                        <div class="text-center text-muted py-4">
+                            <Icon Name="IconName.Activity" Size="IconSize.x3" />
+                            <p class="mb-0 mt-2">Ingen aktivitet endnu. Check ind eller start en træning!</p>
+                        </div>
+                    </CardBody>
+                </Card>
+            }
+        </div>
+
+        @* Achievement Gallery *@
+        <div class="achievements-section mb-4">
+            <h5 class="mb-3">Achievements</h5>
+            @if (AchievementDefinitions.Any())
+            {
+                <div class="achievement-gallery">
+                    @foreach (var category in new[] { "Training", "CheckIn", "Program" })
+                    {
+                        var categoryDefinitions = AchievementDefinitions
+                            .Where(d => d.Category == category)
+                            .OrderBy(d => d.Threshold)
+                            .ToList();
+
+                        @if (categoryDefinitions.Any())
+                        {
+                            <div class="achievement-category mb-3">
+                                <h6 class="text-muted mb-2">
+                                    @(category switch
+                                    {
+                                        "Training" => "Træning",
+                                        "CheckIn" => "Check-ins",
+                                        "Program" => "Programmer",
+                                        _ => category
+                                    })
+                                </h6>
+                                <div class="row g-2">
+                                    @foreach (var definition in categoryDefinitions)
+                                    {
+                                        var isUnlocked = IsAchievementUnlocked(definition.Type);
+                                        var unlockedAchievement = GetUnlockedAchievement(definition.Type);
+                                        var progress = GetProgressForAchievement(definition);
+                                        var progressPercent = GetProgressPercentage(definition);
+
+                                        <div class="col-6 col-md-4 col-lg-3">
+                                            <Card Class="@($"achievement-card h-100 {(isUnlocked ? "" : "achievement-locked")}")">
+                                                <CardBody Class="text-center p-2">
+                                                    <div class="achievement-icon mb-2" style="font-size: 2rem;">
+                                                        @definition.IconUrl
+                                                    </div>
+                                                    <div class="achievement-title fw-medium small">
+                                                        @definition.Title
+                                                    </div>
+                                                    <div class="achievement-description text-muted" style="font-size: 0.7rem;">
+                                                        @definition.Description
+                                                    </div>
+                                                    @if (isUnlocked)
+                                                    {
+                                                        <div class="mt-2">
+                                                            <Badge Color="BadgeColor.Success">
+                                                                <Icon Name="IconName.CheckCircleFill" Class="me-1" />
+                                                                Optjent
+                                                            </Badge>
+                                                            @if (unlockedAchievement != null)
+                                                            {
+                                                                <div class="text-muted mt-1" style="font-size: 0.65rem;">
+                                                                    @unlockedAchievement.UnlockedDate.ToString("d. MMM yyyy")
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="mt-2">
+                                                            <Progress Class="achievement-progress" Style="height: 6px;">
+                                                                <ProgressBar Width="@progressPercent" Color="ProgressColor.Primary" />
+                                                            </Progress>
+                                                            <small class="text-muted" style="font-size: 0.65rem;">
+                                                                @progress / @definition.Threshold
+                                                            </small>
+                                                        </div>
+                                                    }
+                                                </CardBody>
+                                            </Card>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            else
+            {
+                <Card>
+                    <CardBody>
+                        <div class="text-center text-muted py-4">
+                            <Icon Name="IconName.Trophy" Size="IconSize.x3" />
+                            <p class="mb-0 mt-2">Achievements indlæses...</p>
+                        </div>
+                    </CardBody>
+                </Card>
+            }
+        </div>
     }
 </div>
 
@@ -80,14 +252,15 @@
     private bool IsLoading { get; set; } = true;
     private string? ErrorMessage { get; set; }
     private UserStatisticsDto? Statistics { get; set; }
-    private List<UserWorkoutDto> UserWorkouts { get; set; } = [];
     private List<BodyMetricLogDto> WeightHistory { get; set; } = [];
+    private List<ActivityRecordDto> Activities { get; set; } = [];
     private UserMetricsDto? CurrentMetrics { get; set; }
-    private Dictionary<Guid, string> WorkoutNames { get; set; } = [];
+    private List<AchievementDto> Achievements { get; set; } = [];
+    private List<AchievementDefinitionDto> AchievementDefinitions { get; set; } = [];
 
     private int WorkoutsThisWeek => CalculateWorkoutsThisWeek();
     private int TotalWorkouts => Statistics?.Training.TotalSessions ?? 0;
-    private int CurrentStreak => Statistics?.TotalCheckIns ?? 0;
+    private int CurrentStreak => Statistics?.CurrentStreak ?? 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -101,30 +274,22 @@
 
         try
         {
-            var user = await AuthService.GetCurrentUserAsync();
-            if (user == null)
-            {
-                ErrorMessage = "Kunne ikke hente brugerdata.";
-                return;
-            }
-
-            // Load all data in parallel for better performance
+            // Load all data in parallel
             var statsTask = StatsService.GetMyStatisticsAsync();
-            var workoutsTask = ExerciseService.GetUserWorkoutsAsync(user.Id);
             var metricsTask = UserService.GetMyMetricsAsync();
             var weightHistoryTask = UserService.GetMyWeightHistoryAsync(30);
-            var workoutDefinitionsTask = ExerciseService.GetAllWorkoutsAsync();
+            var activitiesTask = StatsService.GetMyActivitiesAsync(90);
+            var achievementsTask = StatsService.GetMyAchievementsAsync();
+            var definitionsTask = StatsService.GetAchievementDefinitionsAsync();
 
-            await Task.WhenAll(statsTask, workoutsTask, metricsTask, weightHistoryTask, workoutDefinitionsTask);
+            await Task.WhenAll(statsTask, metricsTask, weightHistoryTask, activitiesTask, achievementsTask, definitionsTask);
 
             Statistics = statsTask.Result;
-            UserWorkouts = workoutsTask.Result;
             CurrentMetrics = metricsTask.Result;
             WeightHistory = weightHistoryTask.Result;
-
-            // Build workout name lookup dictionary
-            var workoutDefs = workoutDefinitionsTask.Result;
-            WorkoutNames = workoutDefs.ToDictionary(w => w.Id, w => w.Title);
+            Activities = activitiesTask.Result.OrderByDescending(a => a.ActivityDate).ToList();
+            Achievements = achievementsTask.Result;
+            AchievementDefinitions = definitionsTask.Result;
         }
         catch (Exception)
         {
@@ -139,7 +304,7 @@
     private int CalculateWorkoutsThisWeek()
     {
         var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + (int)DayOfWeek.Monday);
-        return UserWorkouts.Count(w => w.CompletedAt.HasValue && w.CompletedAt.Value >= startOfWeek);
+        return Activities.Count(a => a.Type == "Workout" && a.ActivityDate >= startOfWeek);
     }
 
     private decimal GetWeightChange()
@@ -148,5 +313,47 @@
         var latest = WeightHistory.First().WeightKg;
         var oldest = WeightHistory.Last().WeightKg;
         return latest - oldest;
+    }
+
+    private string FormatActivityDate(DateTime date)
+    {
+        var today = DateTime.Today;
+        var activityDate = date.Date;
+
+        if (activityDate == today)
+            return $"I dag kl. {date:HH:mm}";
+        if (activityDate == today.AddDays(-1))
+            return $"I går kl. {date:HH:mm}";
+        if (activityDate > today.AddDays(-7))
+            return $"{(today - activityDate).Days} dage siden kl. {date:HH:mm}";
+
+        return date.ToString("d. MMM yyyy 'kl.' HH:mm");
+    }
+
+    private bool IsAchievementUnlocked(string achievementType)
+    {
+        return Achievements.Any(a => a.Type == achievementType);
+    }
+
+    private AchievementDto? GetUnlockedAchievement(string achievementType)
+    {
+        return Achievements.FirstOrDefault(a => a.Type == achievementType);
+    }
+
+    private int GetProgressForAchievement(AchievementDefinitionDto definition)
+    {
+        return definition.Category switch
+        {
+            "Training" => Statistics?.Training.TotalSessions ?? 0,
+            "CheckIn" => Statistics?.TotalCheckIns ?? 0,
+            "Program" => Statistics?.Programs.TotalCompleted ?? 0,
+            _ => 0
+        };
+    }
+
+    private int GetProgressPercentage(AchievementDefinitionDto definition)
+    {
+        var current = GetProgressForAchievement(definition);
+        return Math.Min(100, (int)((double)current / definition.Threshold * 100));
     }
 }

@@ -1,17 +1,17 @@
 namespace BlazorApp.Services.Exercise;
 
+// Alot of admin methods, used for implementing admin feature. Kept for easy implentation but not made during this sprint. 
+// This is a PoC
 public interface IExerciseService
 {
     // ============== Exercises ==============
     Task<List<ExerciseDto>> GetAllExercisesAsync();
-    Task<ExerciseDto?> GetExerciseByIdAsync(Guid id);
     Task<ExerciseDto?> CreateExerciseAsync(CreateExerciseRequest request);
     Task<bool> UpdateExerciseAsync(Guid id, UpdateExerciseRequest request);
     Task<bool> DeleteExerciseAsync(Guid id);
 
     // ============== Workouts ==============
     Task<List<WorkoutDto>> GetAllWorkoutsAsync();
-    Task<WorkoutDto?> GetWorkoutByIdAsync(Guid id);
     Task<WorkoutDto?> CreateWorkoutAsync(CreateWorkoutRequest request);
     Task<bool> UpdateWorkoutAsync(Guid id, UpdateWorkoutRequest request);
     Task<bool> DeleteWorkoutAsync(Guid id);
@@ -29,17 +29,13 @@ public interface IExerciseService
 
     // ============== User Programs ==============
     Task<List<UserProgramDto>> GetUserProgramsAsync(Guid userId);
-    Task<UserProgramDto?> GetUserProgramByIdAsync(Guid id);
     Task<UserProgramDto?> EnrollInProgramAsync(EnrollProgramRequest request);
-    Task<bool> UpdateProgramProgressAsync(Guid id, UpdateProgramProgressRequest request);
     Task<bool> UnenrollFromProgramAsync(Guid id);
+    Task<bool> RestartProgramAsync(Guid userProgramId);
 
     // ============== User Workouts ==============
-    Task<List<UserWorkoutDto>> GetUserWorkoutsAsync(Guid userId);
-    Task<UserWorkoutDto?> GetUserWorkoutByIdAsync(Guid id);
     Task<List<UserWorkoutDto>> GetUserWorkoutsForProgramAsync(Guid programId, Guid userId);
     Task<UserWorkoutDto?> StartUserWorkoutAsync(StartUserWorkoutRequest request);
-    Task<bool> UpdateUserWorkoutAsync(Guid id, UpdateUserWorkoutRequest request);
     Task<bool> CompleteUserWorkoutAsync(Guid id);
-    Task<bool> DeleteUserWorkoutAsync(Guid id);
+    Task<bool> ToggleExerciseCompletionAsync(Guid userWorkoutId, Guid exerciseId, bool isCompleted);
 }

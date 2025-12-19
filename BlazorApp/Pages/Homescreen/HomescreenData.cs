@@ -12,9 +12,14 @@ public class UserStreak
 
 public class TrainingPlan
 {
+    public Guid? ProgramId { get; set; }
     public string Name { get; set; } = string.Empty;
     public int ExerciseCount { get; set; }
     public int DurationMinutes { get; set; }
+    public int CompletedExercises { get; set; }
+    public int TotalExercises { get; set; }
+    public bool HasActiveProgram => ProgramId.HasValue;
+    public int ProgressPercentage => TotalExercises > 0 ? (CompletedExercises * 100) / TotalExercises : 0;
 }
 
 public class TeamSession

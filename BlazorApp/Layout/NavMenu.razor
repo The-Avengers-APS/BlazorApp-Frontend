@@ -1,12 +1,17 @@
 @using BlazorBootstrap
+@using BlazorApp.SharedComponents
 
 <div class="top-nav">
     <div class="top-nav-content">
         <span class="app-title">FitLife</span>
-        
-        <NavLink href="/profile" class="stat-icon stat-icon-primary avatar-square">
-            <Icon Name="IconName.PersonFill" Size="IconSize.x4" />
-        </NavLink>
+
+        <div class="top-nav-actions">
+            <NotificationBell />
+
+            <NavLink href="/profile" class="stat-icon stat-icon-primary avatar-square">
+                <Icon Name="IconName.PersonFill" Size="IconSize.x4" />
+            </NavLink>
+        </div>
     </div>
 </div>
 
@@ -43,5 +48,11 @@
             <Icon Name="IconName.GraphUpArrow" Size="IconSize.x4" />
         </div>
         <span>Progress</span>
+    </NavLink>
+    <NavLink class="bottom-nav-item" href="/social">
+        <div class="nav-icon">
+            <Icon Name="IconName.PersonHeart" Size="IconSize.x4" />
+        </div>
+        <span>Venner</span>
     </NavLink>
 </div>

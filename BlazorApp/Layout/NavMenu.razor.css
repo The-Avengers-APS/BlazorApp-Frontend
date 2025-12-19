@@ -3,13 +3,15 @@
 /* ------------------------------------------------------ */
 
 .top-nav {
-    position: sticky;
+    position: absolute;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 1200;
     padding: 25px 40px;
 
     /* Premium glass */
-    background: white ;
+    background: white;
     backdrop-filter: blur(18px) saturate(180%);
 
     /* Elegant iOS edge */
@@ -28,6 +30,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.top-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .app-title {

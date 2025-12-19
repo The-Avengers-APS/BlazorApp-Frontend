@@ -2,6 +2,7 @@ namespace BlazorApp.Services.Auth;
 
 using System.Net;
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Components.Authorization;
 
 public class AuthorizationMessageHandler : DelegatingHandler
 {
@@ -45,6 +46,13 @@ public class AuthorizationMessageHandler : DelegatingHandler
                     var newRequest = await CloneRequestAsync(request);
                     newRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", newToken);
                     response = await base.SendAsync(newRequest, cancellationToken);
+                }
+                else
+                {
+                    // Refresh failed - clear tokens and notify auth state
+                    await _tokenStorage.ClearTokensAsync();
+                    var authStateProvider = _serviceProvider.GetRequiredService<AuthenticationStateProvider>();
+                    ((JwtAuthenticationStateProvider)authStateProvider).NotifyAuthenticationStateChanged();
                 }
             }
             finally

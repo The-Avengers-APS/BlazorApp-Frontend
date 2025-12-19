@@ -34,25 +34,6 @@ public class BookingService : IBookingService
         }
     }
 
-    public async Task<BookingDto?> GetBookingByIdAsync(string id)
-    {
-        try
-        {
-            var response = await _httpClient.GetAsync($"api/bookings/{id}");
-
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadFromJsonAsync<BookingDto>();
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
     public async Task<bool> JoinBookingAsync(string bookingId)
     {
         try

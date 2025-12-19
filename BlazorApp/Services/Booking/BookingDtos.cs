@@ -7,7 +7,8 @@ public record BookingDto(
     string Id,
     string Name,
     string Genre,
-    string CenterName,
+    Guid GymId,
+    string GymName,
     int Capacity,
     DateTime TimeStart,
     DateTime TimeEnd,
@@ -29,7 +30,8 @@ public record AddParticipantDto(string UserId);
 public record BookingCreateDto(
     string Name,
     string Genre,
-    string CenterName,
+    Guid GymId,
+    string GymName,
     int Capacity,
     DateTime? TimeStart,
     DateTime? TimeEnd

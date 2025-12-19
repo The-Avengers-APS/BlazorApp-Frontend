@@ -1,6 +1,8 @@
 @page "/training/{Id:guid}"
 @inject IExerciseService ExerciseService
+@inject IAuthService AuthService
 @inject NavigationManager NavigationManager
+@attribute [Authorize]
 
 <div class="program-detail-page">
     @if (IsLoading)
@@ -38,7 +40,49 @@
             {
                 <p class="text-muted mt-2">@(Program.ShortDescription ?? Program.Description)</p>
             }
+
+            @* Completion count badge *@
+            @if (UserProgram != null && UserProgram.CompletionCount > 0)
+            {
+                <Badge Color="BadgeColor.Info" Class="mt-2">
+                    <Icon Name="IconName.Trophy" /> Du har klaret dette program @UserProgram.CompletionCount gang(e)
+                </Badge>
+            }
         </div>
+
+        @* Program completion status *@
+        @if (UserProgram?.Status == ProgramStatus.Completed)
+        {
+            <Alert Color="AlertColor.Success" Class="mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <Icon Name="IconName.Trophy" /> <strong>Tillykke!</strong> Du har gennemført programmet.
+                        @if (UserProgram.CompletedAt.HasValue)
+                        {
+                            <span class="text-muted ms-2">(@UserProgram.CompletedAt.Value.ToString("d. MMM yyyy"))</span>
+                        }
+                    </div>
+                    <Button Color="ButtonColor.Success" Size="ButtonSize.Small"
+                            Loading="@IsRestartingProgram" Disabled="@IsRestartingProgram"
+                            @onclick="RestartProgram">
+                        <Icon Name="IconName.ArrowRepeat" /> Start programmet igen
+                    </Button>
+                </div>
+            </Alert>
+        }
+        else if (UserProgram != null)
+        {
+            @* Show progress - based on exercises completed *@
+            <div class="progress-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold">Din fremgang</span>
+                    <span class="text-muted">@CompletedExercisesCount / @TotalExercisesCount øvelser</span>
+                </div>
+                <Progress Class="mb-0">
+                    <ProgressBar Width="@ProgressPercentage" Color="ProgressColor.Success" />
+                </Progress>
+            </div>
+        }
 
         <!-- Program Info -->
         <div class="info-card mb-4">
@@ -155,11 +199,12 @@
             @if (Program.Workouts.Any())
             {
                 <div class="workouts-list">
-                    @foreach (var programWorkout in Program.Workouts.OrderBy(w => w.OrderIndex))
+                    @foreach (var programWorkout in Program.Workouts.OrderBy(workout => workout.OrderIndex))
                     {
-                        var workout = Workouts.FirstOrDefault(w => w.Id == programWorkout.WorkoutId);
+                        var workout = Workouts.FirstOrDefault(workout => workout.Id == programWorkout.WorkoutId);
                         if (workout != null)
                         {
+                            var userWorkout = GetUserWorkoutForWorkout(workout.Id);
                             <div class="workout-card">
                                 <div class="workout-header" @onclick="() => ToggleWorkout(workout.Id)">
                                     <div class="workout-info">
@@ -168,13 +213,37 @@
                                         {
                                             <Badge Color="BadgeColor.Info" Class="ms-2">@workout.Focus</Badge>
                                         }
+                                        @if (userWorkout?.IsCompleted == true)
+                                        {
+                                            <Badge Color="BadgeColor.Success" Class="ms-2">Fuldført</Badge>
+                                        }
                                         @if (!string.IsNullOrEmpty(programWorkout.DayOfWeek))
                                         {
                                             <span class="text-muted ms-2">(@programWorkout.DayOfWeek)</span>
                                         }
                                     </div>
                                     <div class="workout-toggle">
-                                        <span class="text-muted">@workout.Exercises.Count øvelser</span>
+                                        <span class="text-muted">@GetWorkoutExerciseProgress(userWorkout, workout)</span>
+                                        @if (userWorkout == null)
+                                        {
+                                            <span @onclick:stopPropagation="true">
+                                                <Button Color="ButtonColor.Primary" Size="ButtonSize.Small" Class="workout-play-btn"
+                                                        Loading="@IsStartingWorkout" Disabled="@IsStartingWorkout"
+                                                        @onclick="() => StartWorkout(workout.Id)">
+                                                    <Icon Name="IconName.PlayFill" />
+                                                </Button>
+                                            </span>
+                                        }
+                                        else if (!userWorkout.IsCompleted)
+                                        {
+                                            <span @onclick:stopPropagation="true">
+                                                <Button Color="ButtonColor.Success" Size="ButtonSize.Small" Class="workout-play-btn"
+                                                        Loading="@IsCompletingWorkout" Disabled="@IsCompletingWorkout"
+                                                        @onclick="() => CompleteWorkout(userWorkout.Id)">
+                                                    <Icon Name="IconName.CheckLg" />
+                                                </Button>
+                                            </span>
+                                        }
                                         <Icon Name="@(ExpandedWorkouts.Contains(workout.Id) ? IconName.ChevronUp : IconName.ChevronDown)" />
                                     </div>
                                 </div>
@@ -187,13 +256,24 @@
                                             <p class="text-muted small mb-3">@workout.Description</p>
                                         }
 
-                                        @foreach (var workoutExercise in workout.Exercises.OrderBy(e => e.OrderIndex))
+                                        @foreach (var workoutExercise in workout.Exercises.OrderBy(exercise => exercise.OrderIndex))
                                         {
-                                            var exercise = Exercises.FirstOrDefault(e => e.Id == workoutExercise.ExerciseId);
+                                            var exercise = Exercises.FirstOrDefault(exerciseItem => exerciseItem.Id == workoutExercise.ExerciseId);
                                             if (exercise != null)
                                             {
-                                                <div class="exercise-item">
+                                                <div class="exercise-item @(IsExerciseCompleted(userWorkout, workoutExercise.ExerciseId) ? "completed" : "")">
                                                     <div class="exercise-header">
+                                                        @if (userWorkout != null && !userWorkout.IsCompleted)
+                                                        {
+                                                            <input type="checkbox"
+                                                                   class="exercise-checkbox"
+                                                                   checked="@IsExerciseCompleted(userWorkout, workoutExercise.ExerciseId)"
+                                                                   @onchange="() => ToggleExerciseCompletion(userWorkout.Id, workoutExercise.ExerciseId)" />
+                                                        }
+                                                        else if (userWorkout?.IsCompleted == true)
+                                                        {
+                                                            <Icon Name="IconName.CheckCircleFill" Color="IconColor.Success" Class="me-2" />
+                                                        }
                                                         <span class="exercise-order">@(workoutExercise.OrderIndex + 1).</span>
                                                         <span class="exercise-name">@exercise.Name</span>
                                                         @if (!string.IsNullOrEmpty(exercise.MuscleGroup))
@@ -239,6 +319,14 @@
                                                 </div>
                                             }
                                         }
+
+                                        @* Workout completion status *@
+                                        @if (userWorkout?.IsCompleted == true)
+                                        {
+                                            <div class="workout-completed-info mt-3 pt-3 border-top text-success">
+                                                <Icon Name="IconName.CheckCircleFill" /> Fuldført @userWorkout.CompletedAt?.ToString("d. MMM yyyy")
+                                            </div>
+                                        }
                                     </div>
                                 }
                             </div>
@@ -256,6 +344,23 @@
     }
 </div>
 
+@* Incomplete exercises confirmation modal *@
+<Modal @ref="IncompleteModal" Title="Afslut træning?">
+    <BodyTemplate>
+        <p>Du har ikke afsluttet alle øvelser.</p>
+        <p><strong>@IncompleteExerciseCount øvelse(r)</strong> mangler stadig.</p>
+        <p>Vil du afslutte træningen alligevel?</p>
+    </BodyTemplate>
+    <FooterTemplate>
+        <Button Color="ButtonColor.Secondary" @onclick="CancelCompleteWorkout">
+            Nej, fortsæt træning
+        </Button>
+        <Button Color="ButtonColor.Primary" @onclick="ConfirmCompleteWorkout">
+            Ja, afslut træning
+        </Button>
+    </FooterTemplate>
+</Modal>
+
 @code {
     [Parameter]
     public Guid Id { get; set; }
@@ -263,8 +368,31 @@
     private TrainingProgramDto? Program { get; set; }
     private List<WorkoutDto> Workouts { get; set; } = new();
     private List<ExerciseDto> Exercises { get; set; } = new();
+    private List<UserWorkoutDto> UserWorkouts { get; set; } = new();
+    private UserProgramDto? UserProgram { get; set; }
     private HashSet<Guid> ExpandedWorkouts { get; set; } = new();
     private bool IsLoading { get; set; } = true;
+    private bool IsStartingWorkout { get; set; }
+    private bool IsCompletingWorkout { get; set; }
+    private bool IsRestartingProgram { get; set; }
+    private Guid? CurrentUserId { get; set; }
+
+    // Modal for incomplete exercises confirmation
+    private Modal IncompleteModal = default!;
+    private Guid? PendingCompleteWorkoutId { get; set; }
+    private int IncompleteExerciseCount { get; set; }
+
+    // Progress calculated locally from ExerciseService data (single source of truth)
+    private int TotalExercisesCount => Program?.Workouts.Sum(w =>
+        Workouts.FirstOrDefault(wo => wo.Id == w.WorkoutId)?.Exercises.Count ?? 0) ?? 0;
+
+    private int CompletedExercisesCount => UserWorkouts
+        .Where(uw => uw.IsCompleted)
+        .Sum(uw => uw.Exercises.Count(e => e.IsCompleted));
+
+    private int ProgressPercentage => TotalExercisesCount > 0
+        ? (CompletedExercisesCount * 100) / TotalExercisesCount
+        : 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -276,6 +404,9 @@
         IsLoading = true;
         try
         {
+            var user = await AuthService.GetCurrentUserAsync();
+            CurrentUserId = user?.Id;
+
             Program = await ExerciseService.GetTrainingProgramByIdAsync(Id);
 
             if (Program != null)
@@ -283,10 +414,19 @@
                 Workouts = await ExerciseService.GetAllWorkoutsAsync();
                 Exercises = await ExerciseService.GetAllExercisesAsync();
 
+                // Load user's program enrollment and workouts
+                if (CurrentUserId.HasValue)
+                {
+                    var userPrograms = await ExerciseService.GetUserProgramsAsync(CurrentUserId.Value);
+                    UserProgram = userPrograms.FirstOrDefault(up => up.ProgramId == Id);
+                    UserWorkouts = await ExerciseService.GetUserWorkoutsForProgramAsync(Id, CurrentUserId.Value);
+                    // Progress is calculated locally from UserWorkouts data
+                }
+
                 // Auto-expand first workout
                 if (Program.Workouts.Any())
                 {
-                    var firstWorkout = Program.Workouts.OrderBy(w => w.OrderIndex).First();
+                    var firstWorkout = Program.Workouts.OrderBy(workout => workout.OrderIndex).First();
                     ExpandedWorkouts.Add(firstWorkout.WorkoutId);
                 }
             }
@@ -298,6 +438,187 @@
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private UserWorkoutDto? GetUserWorkoutForWorkout(Guid workoutId)
+    {
+        return UserWorkouts.FirstOrDefault(userWorkout => userWorkout.WorkoutId == workoutId);
+    }
+
+    private string GetWorkoutExerciseProgress(UserWorkoutDto? userWorkout, WorkoutDto workout)
+    {
+        if (userWorkout == null)
+        {
+            return $"{workout.Exercises.Count} øvelser";
+        }
+
+        var completedCount = userWorkout.Exercises.Count(exercise => exercise.IsCompleted);
+        var totalCount = workout.Exercises.Count;
+
+        return $"{completedCount}/{totalCount} øvelser";
+    }
+
+    private async Task StartWorkout(Guid workoutId)
+    {
+        if (!CurrentUserId.HasValue) return;
+
+        IsStartingWorkout = true;
+        try
+        {
+            // Get exercises from workout template
+            var workout = Workouts.FirstOrDefault(workout => workout.Id == workoutId);
+            var exercises = workout?.Exercises.Select(exercise => new UserWorkoutExerciseInput(
+                exercise.ExerciseId,
+                exercise.OrderIndex,
+                0, // Default weight
+                ParseReps(exercise.DefaultReps)
+            )).ToList();
+
+            var request = new StartUserWorkoutRequest(
+                CurrentUserId.Value,
+                Id,
+                workoutId,
+                exercises
+            );
+
+            var result = await ExerciseService.StartUserWorkoutAsync(request);
+            if (result != null)
+            {
+                UserWorkouts.Add(result);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error starting workout: {ex.Message}");
+        }
+        finally
+        {
+            IsStartingWorkout = false;
+        }
+    }
+
+    private static int ParseReps(string? reps)
+    {
+        if (string.IsNullOrEmpty(reps)) return 10;
+        if (reps.Contains('-'))
+        {
+            var parts = reps.Split('-');
+            if (parts.Length == 2 && int.TryParse(parts[0], out var low) && int.TryParse(parts[1], out var high))
+                return (low + high) / 2;
+        }
+        return int.TryParse(reps, out var single) ? single : 10;
+    }
+
+    private async Task CompleteWorkout(Guid userWorkoutId)
+    {
+        var userWorkout = UserWorkouts.FirstOrDefault(workout => workout.Id == userWorkoutId);
+        if (userWorkout == null) return;
+
+        // Check for incomplete exercises
+        var incompleteCount = userWorkout.Exercises.Count(exercise => !exercise.IsCompleted);
+
+        if (incompleteCount > 0)
+        {
+            // Show confirmation modal
+            PendingCompleteWorkoutId = userWorkoutId;
+            IncompleteExerciseCount = incompleteCount;
+            await IncompleteModal.ShowAsync();
+            return;
+        }
+
+        await FinishWorkout(userWorkoutId);
+    }
+
+    private async Task FinishWorkout(Guid userWorkoutId)
+    {
+        IsCompletingWorkout = true;
+        try
+        {
+            var success = await ExerciseService.CompleteUserWorkoutAsync(userWorkoutId);
+            if (success && CurrentUserId.HasValue)
+            {
+                UserWorkouts = await ExerciseService.GetUserWorkoutsForProgramAsync(Id, CurrentUserId.Value);
+                // Also reload UserProgram to check if program is completed
+                var userPrograms = await ExerciseService.GetUserProgramsAsync(CurrentUserId.Value);
+                UserProgram = userPrograms.FirstOrDefault(up => up.ProgramId == Id);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error completing workout: {ex.Message}");
+        }
+        finally
+        {
+            IsCompletingWorkout = false;
+        }
+    }
+
+    private async Task ConfirmCompleteWorkout()
+    {
+        if (PendingCompleteWorkoutId.HasValue)
+        {
+            await IncompleteModal.HideAsync();
+            await FinishWorkout(PendingCompleteWorkoutId.Value);
+            PendingCompleteWorkoutId = null;
+        }
+    }
+
+    private async Task CancelCompleteWorkout()
+    {
+        await IncompleteModal.HideAsync();
+        PendingCompleteWorkoutId = null;
+    }
+
+    private bool IsExerciseCompleted(UserWorkoutDto? userWorkout, Guid exerciseId)
+    {
+        if (userWorkout == null) return false;
+        var exercise = userWorkout.Exercises.FirstOrDefault(exercise => exercise.ExerciseId == exerciseId);
+        return exercise?.IsCompleted ?? false;
+    }
+
+    private async Task ToggleExerciseCompletion(Guid userWorkoutId, Guid exerciseId)
+    {
+        var userWorkout = UserWorkouts.FirstOrDefault(workout => workout.Id == userWorkoutId);
+        if (userWorkout == null) return;
+
+        var exercise = userWorkout.Exercises.FirstOrDefault(exercise => exercise.ExerciseId == exerciseId);
+        if (exercise == null) return;
+
+        var newState = !exercise.IsCompleted;
+        var success = await ExerciseService.ToggleExerciseCompletionAsync(userWorkoutId, exerciseId, newState);
+
+        if (success && CurrentUserId.HasValue)
+        {
+            // Reload UserWorkouts - progress is calculated automatically from this data
+            UserWorkouts = await ExerciseService.GetUserWorkoutsForProgramAsync(Id, CurrentUserId.Value);
+            StateHasChanged();
+        }
+    }
+
+    private async Task RestartProgram()
+    {
+        if (UserProgram == null) return;
+
+        IsRestartingProgram = true;
+        try
+        {
+            var success = await ExerciseService.RestartProgramAsync(UserProgram.Id);
+            if (success)
+            {
+                // Reload all data to reflect the restart
+                await LoadData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error restarting program: {ex.Message}");
+        }
+        finally
+        {
+            IsRestartingProgram = false;
         }
     }
 
@@ -320,11 +641,11 @@
 
     private BadgeColor GetDifficultyColor()
     {
-        return Program?.Difficulty?.ToLower() switch
+        return Program?.Difficulty switch
         {
-            "beginner" or "begynder" => BadgeColor.Success,
-            "intermediate" or "mellem" => BadgeColor.Warning,
-            "advanced" or "avanceret" => BadgeColor.Danger,
+            Difficulty.Begynder => BadgeColor.Success,
+            Difficulty.Intermediær => BadgeColor.Warning,
+            Difficulty.Avanceret => BadgeColor.Danger,
             _ => BadgeColor.Secondary
         };
     }

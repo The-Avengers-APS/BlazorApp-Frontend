@@ -1,6 +1,8 @@
 .live-activity-card {
     border: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
 }
 
 .activity-header {
@@ -8,6 +10,30 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+}
+
+.activity-header-left {
+    display: flex;
+    align-items: center;
+}
+
+.activity-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refresh-btn {
+    padding: 4px 8px;
+    min-width: unset;
+}
+
+.gym-selector {
+    margin-bottom: 12px;
+}
+
+.gym-selector select {
+    font-size: 0.9rem;
 }
 
 .activity-count h3 {
@@ -26,4 +52,18 @@
 
 .capacity-text {
     color: #6c757d;
+}
+
+.last-updated {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.last-updated small {
+    font-size: 0.75rem;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
 }

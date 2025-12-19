@@ -8,6 +8,8 @@ using BlazorApp.Services.Exercise;
 using BlazorApp.Services.Stats;
 using BlazorApp.Services.Social;
 using BlazorApp.Services.User;
+using BlazorApp.Services.Gym;
+using BlazorApp.Services.Notification;
 using BlazorBootstrap;
 using Blazored.LocalStorage;
 
@@ -44,6 +46,12 @@ builder.Services.AddScoped<ISocialService, SocialService>();
 
 // Register user service
 builder.Services.AddScoped<IUserService, UserService>();
+
+// Register gym service
+builder.Services.AddScoped<IGymService, GymService>();
+
+// Register notification service
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Register the authorization message handler
 builder.Services.AddScoped<AuthorizationMessageHandler>();

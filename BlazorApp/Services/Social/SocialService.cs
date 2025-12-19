@@ -11,31 +11,7 @@ public class SocialService : ISocialService
         _httpClient = httpClient;
     }
 
-    // Profile & Streak
-
-    public async Task<UserProfileDto?> GetUserProfileAsync(Guid userId)
-    {
-        try
-        {
-            return await _httpClient.GetFromJsonAsync<UserProfileDto>($"api/social/{userId}/profile");
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    public async Task<StreakDto?> GetUserStreakAsync(Guid userId)
-    {
-        try
-        {
-            return await _httpClient.GetFromJsonAsync<StreakDto>($"api/social/{userId}/streak");
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    // Search
 
     public async Task<List<UserProfileDto>> SearchUsersAsync(string query)
     {
@@ -47,6 +23,19 @@ public class SocialService : ISocialService
         catch
         {
             return [];
+        }
+    }
+
+    public async Task<PagedUsersDto> GetAllUsersAsync(int page = 1, int pageSize = 10)
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<PagedUsersDto>($"api/social/users?page={page}&pageSize={pageSize}");
+            return result ?? new PagedUsersDto([], 0, page, pageSize);
+        }
+        catch
+        {
+            return new PagedUsersDto([], 0, page, pageSize);
         }
     }
 
